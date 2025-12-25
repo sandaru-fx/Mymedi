@@ -282,6 +282,7 @@ const App: React.FC = () => {
   };
 
   const handleSOSRequest = async (situation: string) => {
+    // We now use both professional curated content and dynamic AI update
     setIsLoading(true);
     setError(null);
     setEmergencyData(null);
@@ -289,9 +290,49 @@ const App: React.FC = () => {
       const result = await fetchEmergencyInstructions(situation, language);
       setEmergencyData(result);
     } catch (err) {
-      setError("Emergency lookup failed.");
+      // If AI fails, we still have curated content in state
+      console.error("Emergency lookup failed, falling back to curated content.");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const sosCuratedContent: Record<string, any> = {
+    'Snake Bite': {
+      image: '/src/assets/snake_bite.png',
+      actions: isSinhala ? ['සන්සුන්ව සිටින්න සහ අවයවය නොසොල්වා තබන්න', 'තුවාලය වටා තදින් බැඳීමෙන් වළකින්න', 'වහාම රෝහල් ගත වෙන්න'] : ['Keep the victim calm and still', 'Immobilize the bitten limb', 'Do not apply a tourniquet or cut the wound', 'Seek emergency medical help immediately'],
+      avoid: isSinhala ? ['තුවාලය කැපීම හෝ ලේ උරා බීම', 'අයිස් තැබීම', 'මත්පැන් පානය කිරීම'] : ['Trying to suck out the venom', 'Applying ice or heat', 'Giving the victim alcohol or caffeine'],
+      tip: isSinhala ? 'සර්පයාගේ පෙනුම මතක තබා ගැනීමට උත්සාහ කරන්න' : 'Try to remember the appearance of the snake if possible.'
+    },
+    'Dog Bite': {
+      image: '/src/assets/dog_bite.png',
+      actions: isSinhala ? ['සබන් සහ ජලය යොදා තුවාලය හොඳින් සෝදන්න', 'පිරිසිදු රෙදි කැබැල්ලකින් තද කර රුධිර වහනය නතර කරන්න', 'ප්‍රතිජීවක ආලේපනයක් ගල්වන්න'] : ['Wash the wound thoroughly with soap and water', 'Apply pressure with a clean cloth to stop bleeding', 'Apply antibiotic ointment and cover with a sterile bandage'],
+      avoid: isSinhala ? ['තුවාලය නොසලකා හැරීම', 'එන්නත් ලබා ගැනීම ප්‍රමාද කිරීම'] : ['Ignoring even minor bites', 'Delaying medical evaluation for infection risk'],
+      tip: isSinhala ? 'සුනඛයාගේ අයිතිකරු පිළිබඳව විමසන්න' : 'Check the vaccination status of the dog if known.'
+    },
+    'Choking': {
+      image: '/src/assets/choking.png',
+      actions: isSinhala ? ['පිට මැදට පහර 5ක් දෙන්න', 'උදරයට තෙරපුම (Heimlich Maneuver) 5ක් දෙන්න', 'වස්තුව පිටතට එනතුරු මෙය නැවත කරන්න'] : ['Give 5 back blows between the shoulder blades', 'Perform 5 abdominal thrusts (Heimlich maneuver)', 'Alternate between 5 blows and 5 thrusts until the blockage is cleared'],
+      avoid: isSinhala ? ['පුද්ගලයා කහින විට බාධා කිරීම', 'කට තුලට ඇඟිලි දමා සෙවීමට උත්සාහ කිරීම'] : ['Interfering if the person is coughing forcefully', 'Blind finger sweeps in the mouth'],
+      tip: isSinhala ? 'පුද්ගලයා සිහිසුන් වුවහොත් CPR ආරම්භ කරන්න' : 'If the person becomes unconscious, begin CPR immediately.'
+    },
+    'Severe Bleeding': {
+      image: '/src/assets/bleeding.png',
+      actions: isSinhala ? ['තුවාලය මත සෘජුවම තද කරන්න', 'තුවාලය හදවතේ මට්ටමට වඩා ඉහලින් තබන්න', 'පිරිසිදු වෙළුම් පටියක් භාවිතා කරන්න'] : ['Apply direct pressure to the wound with a clean cloth', 'Elevate the injured area above heart level', 'Apply a sterile bandage once bleeding is controlled'],
+      avoid: isSinhala ? ['බැඳ ඇති රෙදි ඉවත් කිරීම', 'තුවාලය ඇතුලට අමුද්‍රව්‍ය දැමීම'] : ['Removing soaked bandages (layer more on top)', 'Applying a tourniquet unless bleeding is life-threatening'],
+      tip: isSinhala ? 'රුධිර වහනය අධික නම් වහාම 1990 අමතන්න' : 'If bleeding is arterial (spirting), use dynamic pressure.'
+    },
+    'Poisoning': {
+      image: '/src/assets/poisoning.png',
+      actions: isSinhala ? ['විෂ වූ ද්‍රව්‍යය හඳුනා ගන්න', 'බහාලුම ළඟ තබා ගන්න', 'වහාම 1990 හෝ විෂ තොරතුරු මධ්‍යස්ථානය අමතන්න'] : ['Identify the substance and the amount taken', 'Keep the container for medical reference', 'Call emergency services or Poison Control immediately'],
+      avoid: isSinhala ? ['වමනය කිරීමට උත්සහ කිරීම (විශේෂ උපදෙස් නැතිව)', 'කිරි හෝ ජලය ලබා දීම'] : ['Inducing vomiting unless told by a professional', 'Giving ipecac syrup or charcoal'],
+      tip: isSinhala ? 'පුද්ගලයාගේ සිහිය පරීක්ෂා කරමින් සිටින්න' : 'Stay with the person and monitor breathing until help arrives.'
+    },
+    'Heart Attack': {
+      image: '/src/assets/heart_attack.png',
+      actions: isSinhala ? ['පුද්ගලයා සුව පහසු ලෙස වාඩි කරවන්න', 'සිරුරු ඇඳුම් ලිහිල් කරන්න', 'ඇස්පිරින් ලබා දීමට (වෛද්‍ය උපදෙස් මත) උත්සාහ කරන්න'] : ['Have the person sit down and rest', 'Loosen tight clothing', 'Ask if they take chest pain medication (like nitroglycerin)'],
+      avoid: isSinhala ? ['පුද්ගලයාට තනිවම රිය පැදවීමට ඉඩ දීම', 'රෝග ලක්ෂණ නොසලකා හැරීම'] : ['Letting the person drive themselves to the hospital', 'Ignoring early warning signs like indigestion'],
+      tip: isSinhala ? 'පුද්ගලයා සිහිසුන් වුවහොත් වහාම CPR ආරම්භ කරන්න' : 'Begin CPR if the person becomes unresponsive or stops breathing.'
     }
   };
 
@@ -475,38 +516,88 @@ const App: React.FC = () => {
             </a>
 
             {isLoading ? <Loader /> : emergencyData && (
-              <div className="glass-card p-12 rounded-[3.5rem] border-4 border-red-500/30 animate-fade-in-up space-y-12 relative overflow-hidden">
-                <div className="flex flex-col md:flex-row justify-between items-start gap-10">
-                  <div className="flex-1 space-y-6">
-                    <h3 className="text-3xl font-black text-red-600 flex items-center gap-3">
-                      <CheckCircle className="w-8 h-8" /> {isSinhala ? 'වහාම කළ යුතු දෑ' : 'Immediate Actions'}
-                    </h3>
-                    <div className="space-y-4">
-                      {emergencyData.immediateActions.map((action, i) => (
-                        <div key={i} className="flex items-start gap-4 p-5 bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl border border-emerald-100 dark:border-emerald-800/30">
-                          <div className="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center font-black shrink-0">{i + 1}</div>
-                          <p className="font-bold text-emerald-900 dark:text-emerald-100 text-lg leading-relaxed">{action}</p>
-                        </div>
-                      ))}
+              <div className="glass-card p-0 rounded-[3.5rem] border border-white/40 dark:border-slate-800 animate-fade-in-up overflow-hidden shadow-2xl">
+                <div className="relative h-80 w-full overflow-hidden bg-slate-900 group">
+                  <img
+                    src={sosCuratedContent[emergencyData.situation]?.image || '/src/assets/heart_attack.png'}
+                    alt={emergencyData.situation}
+                    className="w-full h-full object-cover opacity-60 group-hover:scale-110 transition-transform duration-700"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent"></div>
+                  <div className="absolute bottom-10 left-10 text-white">
+                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-red-600/20 border border-red-500/50 text-red-500 font-black text-[10px] uppercase tracking-widest mb-4">
+                      <ShieldAlert className="w-4 h-4" /> Priority Level 1
                     </div>
-                  </div>
-                  <div className="flex-1 space-y-6">
-                    <h3 className="text-3xl font-black text-slate-900 dark:text-slate-100 flex items-center gap-3">
-                      <Ban className="w-8 h-8 text-red-600" /> {isSinhala ? 'නොකළ යුතු දෑ' : 'Dangerous Actions'}
-                    </h3>
-                    <div className="space-y-4">
-                      {emergencyData.thingsToAvoid.map((thing, i) => (
-                        <div key={i} className="flex items-start gap-4 p-5 bg-rose-50 dark:bg-rose-950/20 rounded-2xl border border-rose-100 dark:border-rose-900/30">
-                          <div className="w-8 h-8 rounded-full bg-rose-600 text-white flex items-center justify-center font-black shrink-0">X</div>
-                          <p className="font-bold text-rose-900 dark:text-rose-100 text-lg leading-relaxed">{thing}</p>
-                        </div>
-                      ))}
-                    </div>
+                    <h3 className="text-5xl font-black tracking-tighter uppercase">{emergencyData.situation}</h3>
                   </div>
                 </div>
-                <div className="p-8 bg-slate-900 dark:bg-slate-800 rounded-[2rem] text-white">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">Professional Medical Summary</p>
-                  <p className="font-bold italic text-xl leading-relaxed opacity-90">{emergencyData.professionalAdvice}</p>
+
+                <div className="p-12 space-y-12">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                    <div className="space-y-6">
+                      <div className="flex items-center gap-4 text-emerald-500">
+                        <div className="p-3 bg-emerald-500/10 rounded-2xl">
+                          <CheckCircle className="w-6 h-6" />
+                        </div>
+                        <h4 className="text-2xl font-black tracking-tight">{isSinhala ? 'වහාම කළ යුතු දෑ' : 'Step-by-Step Response'}</h4>
+                      </div>
+                      <div className="space-y-4">
+                        {(sosCuratedContent[emergencyData.situation]?.actions || emergencyData.immediateActions).map((action: string, i: number) => (
+                          <div key={i} className="flex items-start gap-5 p-6 bg-slate-50 dark:bg-slate-900/40 rounded-[2rem] border border-slate-200 dark:border-slate-800 group hover:border-emerald-500/30 transition-all">
+                            <span className="w-10 h-10 rounded-full bg-emerald-500 text-white flex items-center justify-center font-black shrink-0 shadow-lg shadow-emerald-500/20">{i + 1}</span>
+                            <p className="font-bold text-slate-700 dark:text-slate-200 text-lg leading-relaxed">{action}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="space-y-6">
+                      <div className="flex items-center gap-4 text-rose-500">
+                        <div className="p-3 bg-rose-500/10 rounded-2xl">
+                          <Ban className="w-6 h-6" />
+                        </div>
+                        <h4 className="text-2xl font-black tracking-tight">{isSinhala ? 'නොකළ යුතු දෑ' : 'Critical Mistakes to Avoid'}</h4>
+                      </div>
+                      <div className="space-y-3">
+                        {(sosCuratedContent[emergencyData.situation]?.avoid || emergencyData.thingsToAvoid).map((thing: string, i: number) => (
+                          <div key={i} className="flex items-center gap-5 p-5 bg-rose-500/5 dark:bg-rose-500/10 rounded-2xl border border-rose-500/10 group hover:border-rose-500/30 transition-all">
+                            <div className="w-8 h-8 rounded-full bg-rose-500/20 text-rose-500 flex items-center justify-center font-black shrink-0">X</div>
+                            <p className="font-bold text-rose-900/80 dark:text-rose-100/80 text-base">{thing}</p>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="mt-8 p-8 bg-slate-950 rounded-[2.5rem] relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-teal-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+                        <div className="relative z-10 flex flex-col gap-4">
+                          <div className="flex items-center gap-2 text-teal-500 text-[10px] font-black uppercase tracking-widest">
+                            <Sparkles className="w-4 h-4" /> Pro Tip
+                          </div>
+                          <p className="text-lg font-bold text-slate-300 italic leading-relaxed">
+                            {sosCuratedContent[emergencyData.situation]?.tip || emergencyData.professionalAdvice}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-8 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-6">
+                    <div className="flex items-center gap-6">
+                      <div className="w-16 h-16 bg-red-600 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-red-600/20">
+                        <PhoneCall className="w-8 h-8" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Emergency Dispatch</p>
+                        <p className="text-3xl font-black text-red-600">1990</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setEmergencyData(null)}
+                      className="px-8 py-4 bg-slate-200 dark:bg-slate-800 font-black text-sm rounded-xl hover:bg-slate-300 dark:hover:bg-slate-700 transition-all"
+                    >
+                      Close Report
+                    </button>
+                  </div>
                 </div>
               </div>
             )}

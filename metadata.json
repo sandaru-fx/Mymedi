@@ -1,0 +1,9 @@
+{
+  "name": "MediGuide AI",
+  "description": "An intelligent medicine information assistant that provides descriptions, usage instructions, and price estimates in English or Sinhala.",
+  "requestFramePermissions": [
+    "microphone",
+    "camera",
+    "geolocation"
+  ]
+}

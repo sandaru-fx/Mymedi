@@ -525,26 +525,73 @@ const App: React.FC = () => {
     <div className="min-h-screen flex flex-col font-sans relative selection:bg-teal-500 selection:text-white transition-colors duration-300">
       <MedicalScene />
 
-      <header className="w-full max-w-7xl mx-auto px-8 py-8 flex justify-between items-center relative z-50">
-        <div className="flex items-center gap-4 cursor-pointer group" onClick={() => setActiveTab('home')}>
-          <div className="bg-slate-950 dark:bg-white p-3 rounded-[1.5rem] shadow-2xl group-hover:scale-110 transition-transform">
-            <Stethoscope className="w-7 h-7 text-teal-400 dark:text-teal-600" />
-          </div>
-          <h1 className="text-3xl font-black text-slate-950 dark:text-white tracking-tighter">MediGuide<span className="text-teal-600">AI</span></h1>
-        </div>
+      <header className="sticky top-0 w-full z-[100] transition-all duration-300">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="glass-card rounded-[2rem] px-8 py-4 flex justify-between items-center shadow-2xl border-white/40 dark:border-slate-800/50">
+            <div className="flex items-center gap-8">
+              <div className="flex items-center gap-3 cursor-pointer group" onClick={() => { setView('landing'); setActiveTab('home'); }}>
+                <div className="bg-slate-950 dark:bg-white p-2.5 rounded-[1.2rem] shadow-xl group-hover:scale-110 transition-transform">
+                  <Stethoscope className="w-6 h-6 text-teal-400 dark:text-teal-600" />
+                </div>
+                <h1 className="text-2xl font-black text-slate-950 dark:text-white tracking-tighter hidden sm:block">
+                  MediGuide<span className="text-teal-600">AI</span>
+                </h1>
+              </div>
 
-        <div className="flex items-center gap-4">
-          <button onClick={() => setLanguage(isSinhala ? Language.English : Language.Sinhala)} className="glass-card px-5 py-2.5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg hover:scale-105 transition-all">
-            {isSinhala ? 'English' : 'සිංහල'}
-          </button>
-          <button onClick={() => setIsDarkMode(!isDarkMode)} className="glass-card p-3 rounded-2xl shadow-lg hover:scale-110 transition-all">
-            {isDarkMode ? <Sun className="w-5 h-5 text-yellow-400" /> : <Moon className="w-5 h-5 text-slate-600" />}
-          </button>
-          {role === 'USER' && (
-            <button onClick={handleLogout} className="glass-card p-3 rounded-2xl text-rose-500 shadow-lg hover:bg-rose-500 hover:text-white transition-all">
-              <LogOut className="w-5 h-5" />
-            </button>
-          )}
+              {view === 'app' && role === 'USER' && (
+                <nav className="hidden md:flex items-center gap-1">
+                  {[
+                    { id: 'home', icon: Home, label: isSinhala ? 'මුල් පිටුව' : 'Home' },
+                    { id: 'search', icon: Search, label: isSinhala ? 'සෙවුම' : 'Search' },
+                    { id: 'sos', icon: AlertTriangle, label: 'SOS', color: 'text-red-600' },
+                    { id: 'reports', icon: FileText, label: isSinhala ? 'වාර්තා' : 'Reports' },
+                  ].map(t => (
+                    <button
+                      key={t.id}
+                      onClick={() => setActiveTab(t.id as Tab)}
+                      className={`px-5 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${activeTab === t.id ? (t.id === 'sos' ? 'bg-red-500/10 text-red-600' : 'bg-teal-500/10 text-teal-600') : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                    >
+                      <t.icon className="w-4 h-4" />
+                      <span>{t.label}</span>
+                    </button>
+                  ))}
+                </nav>
+              )}
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="hidden sm:flex items-center gap-2 mr-2">
+                <button
+                  onClick={() => setLanguage(isSinhala ? Language.English : Language.Sinhala)}
+                  className="px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-100 dark:hover:bg-slate-800 transition-all border border-transparent hover:border-slate-200 dark:hover:border-slate-700"
+                >
+                  {isSinhala ? 'EN' : 'සිං'}
+                </button>
+                <button
+                  onClick={() => setIsDarkMode(!isDarkMode)}
+                  className="p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-slate-500"
+                >
+                  {isDarkMode ? <Sun className="w-5 h-5 text-yellow-500" /> : <Moon className="w-5 h-5" />}
+                </button>
+              </div>
+
+              {view === 'landing' ? (
+                <div className="flex items-center gap-3">
+                  <button onClick={() => setView('login')} className="hidden xs:block px-6 py-2.5 font-bold text-sm hover:text-teal-600 transition-all">Sign In</button>
+                  <button onClick={() => setView('signup')} className="px-6 py-2.5 bg-slate-950 dark:bg-white text-white dark:text-slate-950 font-black text-sm rounded-xl shadow-lg hover:scale-105 transition-all">Join Free</button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <button onClick={() => setActiveTab('profile')} className={`p-2.5 rounded-xl transition-all ${activeTab === 'profile' ? 'bg-teal-500/10 text-teal-600' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
+                    <User className="w-5 h-5" />
+                  </button>
+                  <button onClick={handleLogout} className="p-2.5 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all">
+                    <LogOut className="w-5 h-5" />
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </header>
 
@@ -733,8 +780,8 @@ const App: React.FC = () => {
         {view === 'app' && role && renderContent()}
       </main>
 
-      {role === 'USER' && (
-        <nav className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[100] w-[90%] max-w-lg glass-card border-white/40 dark:border-slate-800 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.15)] rounded-[3rem] px-8 py-4 flex justify-between items-center animate-fade-in-up">
+      {view === 'app' && role === 'USER' && (
+        <nav className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] w-[90%] max-w-lg glass-card border-white/40 dark:border-slate-800 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.15)] rounded-[2.5rem] px-6 py-3 flex justify-between items-center animate-fade-in-up">
           {[
             { id: 'home', icon: Home, label: 'Home' },
             { id: 'search', icon: Search, label: 'Search' },
@@ -742,10 +789,8 @@ const App: React.FC = () => {
             { id: 'reports', icon: FileText, label: 'Report' },
             { id: 'profile', icon: User, label: 'User' }
           ].map(t => (
-            <button key={t.id} onClick={() => setActiveTab(t.id as Tab)} className={`flex flex-col items-center gap-1.5 transition-all ${activeTab === t.id ? (t.color || 'text-teal-600 scale-125') : 'text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}>
-              <div className={`${activeTab === t.id ? 'bg-teal-500/10 p-2 rounded-2xl' : ''}`}>
-                <t.icon className={`w-6 h-6 ${activeTab === t.id ? 'fill-current opacity-20' : ''}`} />
-              </div>
+            <button key={t.id} onClick={() => setActiveTab(t.id as Tab)} className={`flex flex-col items-center p-2 rounded-2xl transition-all ${activeTab === t.id ? (t.color || 'bg-teal-500/10 text-teal-600 scale-110') : 'text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}>
+              <t.icon className={`w-6 h-6 ${activeTab === t.id ? 'fill-current opacity-20' : ''}`} />
             </button>
           ))}
         </nav>

@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { MedicineInfo, Language, InteractionResult, PharmacyLocation, DosageSchedule, SymptomAnalysis, EmergencyInfo } from "../types";
+import { MedicineInfo, Language, InteractionResult, PharmacyLocation, DosageSchedule, SymptomAnalysis, EmergencyInfo } from "../models/types";
 
 export const fetchMedicineDetails = async (
   medicineName: string,

@@ -87,3 +87,7 @@ export interface UserInquiry {
 }
 
 export type UserRole = 'USER' | 'ADMIN' | null;
+
+export type Tab = 'home' | 'search' | 'reports' | 'profile' | 'sos';
+export type AdminTab = 'dashboard' | 'analytics';
+export type AuthView = 'landing' | 'login' | 'signup' | 'app';

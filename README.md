@@ -33,3 +33,29 @@ MyMedi is a modern web application designed to empower citizens by providing tra
 1. Clone the repository:
    ```bash
    git clone [https://github.com/sandaru-fx/Mymedi.git](https://github.com/sandaru-fx/Mymedi.git)
+   ```
+
+2. Navigate to the project folder:
+
+```Bash
+
+cd Mymedi
+```
+
+3. Install dependencies:
+
+```Bash
+
+npm install
+```
+
+4. Start the development server:
+
+```Bash
+
+npm run dev
+```
+
+------------------------------------------------------Developed by Sandaru Jayaweera --------------------------------------------------------
+
+   

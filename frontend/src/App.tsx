@@ -10,6 +10,8 @@ import SignupPage from './views/auth/SignupPage';
 import HomeView from './views/HomeView';
 import SearchView from './views/SearchView';
 import SOSView from './views/SOSView';
+import ServicesView from './views/ServicesView';
+import AboutView from './views/AboutView';
 
 const App: React.FC = () => {
   const controller = useAppController();
@@ -54,6 +56,10 @@ const App: React.FC = () => {
             setEmergencyData={setEmergencyData}
           />
         );
+      case 'services':
+        return <ServicesView />;
+      case 'about':
+        return <AboutView />;
       case 'profile':
       case 'reports':
       default:
@@ -79,7 +85,9 @@ const App: React.FC = () => {
       />
 
       <main className="flex-grow flex flex-col items-center relative z-10 overflow-y-auto">
-        {view === 'landing' && <LandingPage setView={setView} />}
+        {(view === 'landing' || view === 'app') && activeTab === 'home' && view === 'landing' && <LandingPage setView={setView} />}
+
+        {(activeTab === 'services' || activeTab === 'about') && renderContent()}
 
         {view === 'login' && (
           <LoginPage

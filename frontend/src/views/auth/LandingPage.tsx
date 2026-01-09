@@ -8,6 +8,8 @@ import {
 } from 'lucide-react';
 import { AuthView } from '../../models/types';
 
+import { SignUpButton, SignInButton } from '@clerk/clerk-react';
+
 interface LandingPageProps {
     setView: (view: AuthView) => void;
 }
@@ -29,18 +31,21 @@ const LandingPage: React.FC<LandingPageProps> = ({ setView }) => {
             </div>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-6 pt-10">
-                <button
-                    onClick={() => setView('signup')}
-                    className="w-full sm:w-auto px-12 py-6 bg-slate-950 dark:bg-white text-white dark:text-slate-950 text-xl font-black rounded-[2rem] shadow-2xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-4 group"
-                >
-                    Get Started <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
-                </button>
-                <button
-                    onClick={() => setView('login')}
-                    className="w-full sm:w-auto px-12 py-6 glass-card text-xl font-black rounded-[2rem] shadow-xl hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-all"
-                >
-                    Sign In
-                </button>
+                <SignUpButton mode="modal">
+                    <button
+                        className="w-full sm:w-auto px-12 py-6 bg-slate-950 dark:bg-white text-white dark:text-slate-950 text-xl font-black rounded-[2rem] shadow-2xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-4 group"
+                    >
+                        Get Started <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
+                    </button>
+                </SignUpButton>
+
+                <SignInButton mode="modal">
+                    <button
+                        className="w-full sm:w-auto px-12 py-6 glass-card text-xl font-black rounded-[2rem] shadow-xl hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-all"
+                    >
+                        Sign In
+                    </button>
+                </SignInButton>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-20">

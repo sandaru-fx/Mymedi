@@ -3,12 +3,16 @@ import { API_BASE_URL } from "../config/apiConfig";
 
 export const fetchMedicineDetails = async (
   medicineName: string,
-  language: Language
+  language: Language,
+  token: string
 ): Promise<MedicineInfo> => {
   try {
     const response = await fetch(`${API_BASE_URL}/medicine-details`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
       body: JSON.stringify({ medicineName, language }),
     });
     if (!response.ok) throw new Error("Failed to retrieve medicine info.");
@@ -20,12 +24,16 @@ export const fetchMedicineDetails = async (
 
 export const fetchEmergencyInstructions = async (
   situation: string,
-  language: Language
+  language: Language,
+  token: string
 ): Promise<EmergencyInfo> => {
   try {
     const response = await fetch(`${API_BASE_URL}/emergency-instructions`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
       body: JSON.stringify({ situation, language }),
     });
     if (!response.ok) throw new Error("Failed to fetch emergency instructions.");
@@ -37,12 +45,16 @@ export const fetchEmergencyInstructions = async (
 
 export const analyzeSymptoms = async (
   symptoms: string,
-  language: Language
+  language: Language,
+  token: string
 ): Promise<SymptomAnalysis> => {
   try {
     const response = await fetch(`${API_BASE_URL}/analyze-symptoms`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
       body: JSON.stringify({ symptoms, language }),
     });
     if (!response.ok) throw new Error("Symptom analysis failed.");

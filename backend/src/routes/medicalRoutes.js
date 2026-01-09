@@ -2,8 +2,10 @@ const express = require('express');
 const router = express.Router();
 const medicalController = require('../controllers/medicalController');
 
-router.post('/medicine-details', medicalController.getMedicineDetails);
-router.post('/analyze-symptoms', medicalController.analyzeSymptoms);
-router.post('/emergency-instructions', medicalController.getEmergencyInstructions);
+const { requireAuth } = require('@clerk/express');
+
+router.post('/medicine-details', requireAuth(), medicalController.getMedicineDetails);
+router.post('/analyze-symptoms', requireAuth(), medicalController.analyzeSymptoms);
+router.post('/emergency-instructions', requireAuth(), medicalController.getEmergencyInstructions);
 
 module.exports = router;

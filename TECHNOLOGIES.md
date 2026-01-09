@@ -32,6 +32,7 @@ A comprehensive overview of the technologies, tools, and libraries used in the M
   - Medicine Information Retrieval
   - Symptom Analysis
   - First-aid & Emergency Instructions
+- **Clerk**: Authentication and user management.
 
 ---
 

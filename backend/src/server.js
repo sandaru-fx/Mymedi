@@ -1,8 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
-
 const mongoose = require('mongoose');
+const { clerkMiddleware } = require('@clerk/express');
 
 dotenv.config();
 
@@ -16,6 +16,7 @@ mongoose.connect(process.env.MONGODB_URI)
 
 app.use(cors());
 app.use(express.json());
+app.use(clerkMiddleware());
 
 app.get('/', (req, res) => {
     res.send('MediGuide AI Backend Running');

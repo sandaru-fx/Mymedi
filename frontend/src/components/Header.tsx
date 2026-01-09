@@ -8,9 +8,12 @@ import {
     Sun,
     Moon,
     User,
-    LogOut
+    LogOut,
+    Layout,
+    Info
 } from 'lucide-react';
 import { Tab, AuthView, Language, UserRole } from '../models/types';
+import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/clerk-react';
 
 interface HeaderProps {
     view: AuthView;
@@ -51,25 +54,25 @@ const Header: React.FC<HeaderProps> = ({
                             </h1>
                         </div>
 
-                        {view === 'app' && role === 'USER' && (
-                            <nav className="hidden md:flex items-center gap-1">
-                                {[
-                                    { id: 'home', icon: Home, label: isSinhala ? 'මුල් පිටුව' : 'Home' },
-                                    { id: 'search', icon: Search, label: isSinhala ? 'සෙවුම' : 'Search' },
-                                    { id: 'sos', icon: AlertTriangle, label: 'SOS', color: 'text-red-600' },
-                                    { id: 'reports', icon: FileText, label: isSinhala ? 'වාර්තා' : 'Reports' },
-                                ].map(t => (
-                                    <button
-                                        key={t.id}
-                                        onClick={() => setActiveTab(t.id as Tab)}
-                                        className={`px-5 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${activeTab === t.id ? (t.id === 'sos' ? 'bg-red-500/10 text-red-600' : 'bg-teal-500/10 text-teal-600') : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
-                                    >
-                                        <t.icon className="w-4 h-4" />
-                                        <span>{t.label}</span>
-                                    </button>
-                                ))}
-                            </nav>
-                        )}
+                        <nav className="hidden md:flex items-center gap-1">
+                            {[
+                                { id: 'home', icon: Home, label: isSinhala ? 'මුල් පිටුව' : 'Home', public: true },
+                                { id: 'services', icon: Layout, label: isSinhala ? 'සේවා' : 'Services', public: true },
+                                { id: 'search', icon: Search, label: isSinhala ? 'සෙවුම' : 'Search', public: false },
+                                { id: 'sos', icon: AlertTriangle, label: 'SOS', color: 'text-red-600', public: false },
+                                { id: 'about', icon: Info, label: isSinhala ? 'අප ගැන' : 'About', public: true },
+                                { id: 'reports', icon: FileText, label: isSinhala ? 'වාර්තා' : 'Reports', public: false },
+                            ].filter(t => t.public || (view === 'app' && role === 'USER')).map(t => (
+                                <button
+                                    key={t.id}
+                                    onClick={() => setActiveTab(t.id as Tab)}
+                                    className={`px-5 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${activeTab === t.id ? (t.id === 'sos' ? 'bg-red-500/10 text-red-600' : 'bg-teal-500/10 text-teal-600') : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                                >
+                                    <t.icon className="w-4 h-4" />
+                                    <span>{t.label}</span>
+                                </button>
+                            ))}
+                        </nav>
                     </div>
 
                     <div className="flex items-center gap-3">
@@ -88,21 +91,22 @@ const Header: React.FC<HeaderProps> = ({
                             </button>
                         </div>
 
-                        {view === 'landing' ? (
-                            <div className="flex items-center gap-3">
-                                <button onClick={() => setView('login')} className="hidden xs:block px-6 py-2.5 font-bold text-sm hover:text-teal-600 transition-all">Sign In</button>
-                                <button onClick={() => setView('signup')} className="px-6 py-2.5 bg-slate-950 dark:bg-white text-white dark:text-slate-950 font-black text-sm rounded-xl shadow-lg hover:scale-105 transition-all">Join Free</button>
-                            </div>
-                        ) : (
-                            <div className="flex items-center gap-3">
+                        <SignedOut>
+                            <SignInButton mode="modal">
+                                <button className="px-6 py-2.5 bg-slate-950 dark:bg-white text-white dark:text-slate-950 font-black text-sm rounded-xl shadow-lg hover:scale-105 transition-all">
+                                    Sign In
+                                </button>
+                            </SignInButton>
+                        </SignedOut>
+
+                        <SignedIn>
+                            <div className="flex items-center gap-4">
                                 <button onClick={() => setActiveTab('profile')} className={`p-2.5 rounded-xl transition-all ${activeTab === 'profile' ? 'bg-teal-500/10 text-teal-600' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
                                     <User className="w-5 h-5" />
                                 </button>
-                                <button onClick={handleLogout} className="p-2.5 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all">
-                                    <LogOut className="w-5 h-5" />
-                                </button>
+                                <UserButton afterSignOutUrl="/" />
                             </div>
-                        )}
+                        </SignedIn>
                     </div>
                 </div>
             </div>

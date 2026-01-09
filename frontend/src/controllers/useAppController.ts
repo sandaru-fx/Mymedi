@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
+import { useAuth } from '@clerk/clerk-react';
 import {
     fetchMedicineDetails,
     analyzeSymptoms,
@@ -19,6 +20,7 @@ import {
 } from '../models/types';
 
 export const useAppController = () => {
+    const { getToken, isLoaded, isSignedIn } = useAuth();
     const [view, setView] = useState<AuthView>('landing');
     const [role, setRole] = useState<UserRole>(null);
     const [activeTab, setActiveTab] = useState<Tab>('home');
@@ -105,6 +107,16 @@ export const useAppController = () => {
         localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
     }, [isDarkMode]);
 
+    useEffect(() => {
+        if (isLoaded && isSignedIn) {
+            setView('app');
+            setRole('USER');
+        } else if (isLoaded && !isSignedIn) {
+            setView('landing');
+            setRole(null);
+        }
+    }, [isLoaded, isSignedIn]);
+
     const adminAnalytics = useMemo(() => {
         const total = inquiries.length;
         const statusDistribution = {
@@ -190,11 +202,14 @@ export const useAppController = () => {
         setError(null);
         setHasSearched(true);
         try {
+            const token = await getToken();
+            if (!token) throw new Error("Not authenticated");
+
             if (mode === 'medicine') {
-                const result = await fetchMedicineDetails(searchQuery, language);
+                const result = await fetchMedicineDetails(searchQuery, language, token);
                 setData(result);
             } else {
-                const result = await analyzeSymptoms(searchQuery, language);
+                const result = await analyzeSymptoms(searchQuery, language, token);
                 setSymptomData(result);
             }
         } catch (err) {
@@ -210,7 +225,10 @@ export const useAppController = () => {
         setError(null);
         setEmergencyData(null);
         try {
-            const result = await fetchEmergencyInstructions(situation, language);
+            const token = await getToken();
+            if (!token) throw new Error("Not authenticated");
+
+            const result = await fetchEmergencyInstructions(situation, language, token);
             setEmergencyData(result);
         } catch (err) {
             // If AI fails, we still have curated content in state

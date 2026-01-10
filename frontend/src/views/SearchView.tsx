@@ -29,6 +29,7 @@ interface SearchViewProps {
     data: MedicineInfo | null;
     symptomData: SymptomAnalysis | null;
     language: Language;
+    error: string | null;
 }
 
 const SearchView: React.FC<SearchViewProps> = ({
@@ -44,7 +45,8 @@ const SearchView: React.FC<SearchViewProps> = ({
     isLoading,
     data,
     symptomData,
-    language
+    language,
+    error
 }) => {
     const { getToken } = useAuth();
     const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -200,8 +202,8 @@ const SearchView: React.FC<SearchViewProps> = ({
                                             transition={{ delay: index * 0.03 }}
                                             onClick={() => selectSuggestion(suggestion)}
                                             className={`w-full text-left px-6 py-4 rounded-2xl font-bold text-slate-700 dark:text-slate-200 transition-all ${selectedIndex === index
-                                                    ? 'bg-teal-500 text-white shadow-lg scale-[1.02]'
-                                                    : 'hover:bg-white/50 dark:hover:bg-slate-800/50'
+                                                ? 'bg-teal-500 text-white shadow-lg scale-[1.02]'
+                                                : 'hover:bg-white/50 dark:hover:bg-slate-800/50'
                                                 }`}
                                         >
                                             <div className="flex items-center gap-3">
@@ -222,7 +224,23 @@ const SearchView: React.FC<SearchViewProps> = ({
                 </div>
             </div>
 
-            <div className="mt-16 w-full">
+            <div className="mt-16 w-full px-4">
+                {error && (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="glass-card p-8 rounded-3xl border border-rose-500/20 bg-rose-500/5 text-rose-600 dark:text-rose-400 mb-10 flex items-center gap-5"
+                    >
+                        <div className="p-4 bg-rose-500 text-white rounded-2xl shadow-lg ring-4 ring-rose-500/20">
+                            <AlertTriangle className="w-8 h-8" />
+                        </div>
+                        <div>
+                            <h4 className="text-xl font-black uppercase tracking-tight">{isSinhala ? 'දෝෂයක් සිදුවිය' : 'Search Error'}</h4>
+                            <p className="font-bold opacity-80">{error}</p>
+                        </div>
+                    </motion.div>
+                )}
+
                 {isLoading ? <Loader /> : (
                     <>
                         {data && <MedicineCard info={data} language={language} />}

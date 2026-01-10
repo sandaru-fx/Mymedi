@@ -46,6 +46,7 @@ const App: React.FC = () => {
             data={data}
             symptomData={symptomData}
             language={language}
+            error={controller.error}
           />
         );
       case 'sos':

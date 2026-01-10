@@ -2,6 +2,7 @@ const { GoogleGenAI, SchemaType } = require("@google/genai");
 
 const getMedicineDetails = async (req, res) => {
     const { medicineName, language } = req.body;
+    console.log(`[Medicine Search] Fetching details for: ${medicineName} (${language})`);
     const genAI = new GoogleGenAI(process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({
         model: "gemini-1.5-flash",
@@ -47,6 +48,7 @@ const getMedicineDetails = async (req, res) => {
     try {
         const result = await model.generateContent(prompt);
         const response = JSON.parse(result.response.text());
+        console.log(`[Medicine Search] Successfully retrieved info for: ${medicineName}`);
         res.json(response);
     } catch (error) {
         console.error("AI Error:", error);

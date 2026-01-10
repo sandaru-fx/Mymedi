@@ -103,11 +103,12 @@ const Header: React.FC<HeaderProps> = ({
                         </div>
 
                         <SignedOut>
-                            <SignInButton mode="modal">
-                                <button className="px-6 py-2.5 bg-slate-950 dark:bg-white text-white dark:text-slate-950 font-black text-sm rounded-xl shadow-lg hover:scale-105 transition-all">
-                                    Sign In
-                                </button>
-                            </SignInButton>
+                            <button
+                                onClick={() => setView('login')}
+                                className="px-6 py-2.5 bg-slate-950 dark:bg-white text-white dark:text-slate-950 font-black text-sm rounded-xl shadow-lg hover:scale-105 transition-all"
+                            >
+                                Sign In
+                            </button>
                         </SignedOut>
 
                         <SignedIn>

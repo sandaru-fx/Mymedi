@@ -37,6 +37,9 @@ export const useAppController = () => {
     });
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [showNotifications, setShowNotifications] = useState(false);
+    const [showWelcome, setShowWelcome] = useState(() => {
+        return !localStorage.getItem('mediguide_welcome_done');
+    });
     const [showOnboarding, setShowOnboarding] = useState(false);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [onboardingStep, setOnboardingStep] = useState(0);
@@ -53,7 +56,13 @@ export const useAppController = () => {
 
     const [query, setQuery] = useState('');
     const [mode, setMode] = useState<'medicine' | 'symptom'>('medicine');
-    const [language, setLanguage] = useState<Language>(Language.Sinhala);
+    const [language, setLanguage] = useState<Language>(() => {
+        const saved = localStorage.getItem('mediguide_language');
+        return (saved as Language) || Language.Sinhala;
+    });
+    useEffect(() => {
+        localStorage.setItem('mediguide_language', language);
+    }, [language]);
     const isSinhala = language === Language.Sinhala;
     const [isLoading, setIsLoading] = useState(false);
     const [data, setData] = useState<MedicineInfo | null>(null);
@@ -203,18 +212,28 @@ export const useAppController = () => {
         setError(null);
         setHasSearched(true);
         try {
-            const token = await getToken();
-            if (!token) throw new Error("Not authenticated");
+            let token = null;
+            try {
+                token = await getToken();
+            } catch (authErr) {
+                console.warn("Auth token retrieval failed, proceeding as public user");
+            }
 
             if (mode === 'medicine') {
-                const result = await fetchMedicineDetails(searchQuery, language, token);
+                const result = await fetchMedicineDetails(searchQuery, language, token || '');
                 setData(result);
             } else {
-                const result = await analyzeSymptoms(searchQuery, language, token);
+                const result = await analyzeSymptoms(searchQuery, language, token || '');
                 setSymptomData(result);
             }
-        } catch (err) {
-            setError("Failed to fetch medical intelligence.");
+        } catch (err: any) {
+            console.error("Search Error Detail:", err);
+            const msg = err.message || "";
+            if (msg.includes("Failed to fetch") || msg.includes("Failed to connect")) {
+                setError(isSinhala ? "සර්වර් එක සමඟ සම්බන්ධ වීමට නොහැක. කරුණාකර නැවත උත්සාහ කරන්න." : "Cannot connect to server. Please check your connection or if the backend is running.");
+            } else {
+                setError(isSinhala ? "වෛද්‍ය තොරතුරු ලබා ගැනීමට අපොහොසත් විය." : "Failed to fetch medical intelligence. Please try again later.");
+            }
         } finally {
             setIsLoading(false);
         }
@@ -244,6 +263,11 @@ export const useAppController = () => {
             console.error("Emergency AI lookup failed, using curated fallback.");
             // Curated content is handled in the view via mapping
         }
+    };
+
+    const completeWelcome = () => {
+        localStorage.setItem('mediguide_welcome_done', 'true');
+        setShowWelcome(false);
     };
 
     const handleLogout = () => {
@@ -292,6 +316,10 @@ export const useAppController = () => {
         handleGoogleSignIn,
         handleSearch,
         handleSOSRequest,
-        handleLogout
+        handleSOSRequest,
+        handleLogout,
+        showWelcome,
+        setShowWelcome,
+        completeWelcome
     };
 };

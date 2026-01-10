@@ -1,58 +1,92 @@
 const { GoogleGenAI, SchemaType } = require("@google/genai");
+const Medicine = require('../models/Medicine');
 
 const getMedicineDetails = async (req, res) => {
     const { medicineName, language } = req.body;
     console.log(`[Medicine Search] Fetching details for: ${medicineName} (${language})`);
-    const genAI = new GoogleGenAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({
-        model: "gemini-1.5-flash",
-        generationConfig: {
-            responseMimeType: "application/json",
-            responseSchema: {
-                type: SchemaType.OBJECT,
-                properties: {
-                    medicineName: { type: SchemaType.STRING },
-                    description: { type: SchemaType.STRING },
-                    uses: { type: SchemaType.STRING },
-                    howToUse: { type: SchemaType.STRING },
-                    priceRange: { type: SchemaType.STRING },
-                    sideEffects: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
-                    foodInteractions: { type: SchemaType.STRING },
-                    disclaimer: { type: SchemaType.STRING },
-                },
-                required: ["medicineName", "description", "uses", "howToUse", "priceRange", "sideEffects", "foodInteractions", "disclaimer"],
-            },
-        },
-    });
-
-    const prompt = `
-        You are a professional medical assistant with expertise in Sri Lankan pharmaceutical market.
-        Medicine Name: "${medicineName}"
-        Target Language: "${language}"
-        
-        Provide comprehensive medical information following the schema.
-        
-        IMPORTANT FOR PRICE RANGE:
-        - Provide the CURRENT Sri Lankan market price range (e.g., "LKR 50 - 80" or "Rs. 150 - 200")
-        - Include both generic and branded versions if applicable
-        - Be specific and realistic based on 2024-2025 Sri Lankan pharmacy prices
-        - If exact price is unknown, provide a reasonable estimate with disclaimer
-        
-        IMPORTANT FOR HOW TO USE:
-        - Provide step-by-step instructions with timing (e.g., "Take 1 tablet every 8 hours")
-        - Include whether to take before/after meals
-        - Mention duration of treatment if applicable
-        - Be clear and specific
-    `;
 
     try {
+        // 1. DATABASE CHECK (Priority 1)
+        const dbMedicine = await Medicine.findOne({
+            medicineName: medicineName.toLowerCase().trim()
+        });
+
+        if (dbMedicine) {
+            console.log(`[Medicine Search] Found in DATABASE: ${medicineName}`);
+            return res.json({
+                medicineName: dbMedicine.displayName || dbMedicine.medicineName,
+                description: dbMedicine.description,
+                uses: dbMedicine.uses,
+                howToUse: dbMedicine.howToUse,
+                priceRange: dbMedicine.priceRange,
+                sideEffects: dbMedicine.sideEffects,
+                foodInteractions: dbMedicine.foodInteractions,
+                disclaimer: dbMedicine.disclaimer
+            });
+        }
+
+        // 2. AI GENERATION (Fallback)
+        console.log(`[Medicine Search] Not in DB. Asking AI for: ${medicineName}`);
+        const genAI = new GoogleGenAI(process.env.GEMINI_API_KEY);
+        const model = genAI.getGenerativeModel({
+            model: "gemini-1.5-flash",
+            generationConfig: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: SchemaType.OBJECT,
+                    properties: {
+                        medicineName: { type: SchemaType.STRING },
+                        description: { type: SchemaType.STRING },
+                        uses: { type: SchemaType.STRING },
+                        howToUse: { type: SchemaType.STRING },
+                        priceRange: { type: SchemaType.STRING },
+                        sideEffects: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
+                        foodInteractions: { type: SchemaType.STRING },
+                        disclaimer: { type: SchemaType.STRING },
+                    },
+                    required: ["medicineName", "description", "uses", "howToUse", "priceRange", "sideEffects", "foodInteractions", "disclaimer"],
+                },
+            },
+        });
+
+        const prompt = `
+            You are a professional medical assistant with expertise in Sri Lankan pharmaceutical market.
+            Medicine Name: "${medicineName}"
+            Target Language: "${language}"
+            
+            Provide comprehensive medical information following the schema.
+            
+            IMPORTANT FOR PRICE RANGE:
+            - Provide an ESTIMATED market price range for Sri Lanka (e.g., "Rs. 150 - 200").
+            - This is for INFORMATIONAL PURPOSES ONLY.
+            - If exact price is volatile, provide a broad estimate.
+            - DO NOT REFUSE TO ANSWER due to price fluctuations. Give a helpful estimate.
+            
+            IMPORTANT FOR HOW TO USE:
+            - Provide step-by-step instructions.
+            - Be clear and specific.
+        `;
+
         const result = await model.generateContent(prompt);
-        const response = JSON.parse(result.response.text());
-        console.log(`[Medicine Search] Successfully retrieved info for: ${medicineName}`);
+        let text = result.response.text();
+
+        text = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        const firstOpen = text.indexOf('{');
+        const lastClose = text.lastIndexOf('}');
+        if (firstOpen !== -1 && lastClose !== -1) {
+            text = text.substring(firstOpen, lastClose + 1);
+        }
+
+        const response = JSON.parse(text);
+        console.log(`[Medicine Search] Successfully retrieved info from AI for: ${medicineName}`);
         res.json(response);
+
     } catch (error) {
-        console.error("AI Error:", error);
-        res.status(500).json({ error: "Failed to retrieve medicine info." });
+        console.error("Search Error Details:", error);
+        res.status(500).json({
+            error: "Failed to retrieve medicine info.",
+            details: error.message
+        });
     }
 };
 
@@ -83,7 +117,9 @@ const analyzeSymptoms = async (req, res) => {
 
     try {
         const result = await model.generateContent(prompt);
-        const response = JSON.parse(result.response.text());
+        let text = result.response.text();
+        text = text.replace(/```json\n?|```/g, '');
+        const response = JSON.parse(text);
         res.json(response);
     } catch (error) {
         console.error("AI Error:", error);
@@ -120,7 +156,9 @@ const getEmergencyInstructions = async (req, res) => {
 
     try {
         const result = await model.generateContent(prompt);
-        const response = JSON.parse(result.response.text());
+        let text = result.response.text();
+        text = text.replace(/```json\n?|```/g, '');
+        const response = JSON.parse(text);
         res.json(response);
     } catch (error) {
         console.error("AI Error:", error);

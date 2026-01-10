@@ -5,6 +5,7 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import MobileNav from './components/MobileNav';
 import SOSModal from './components/SOSModal';
+import WelcomeModal from './components/WelcomeModal';
 import LandingPage from './views/auth/LandingPage';
 import LoginPage from './views/auth/LoginPage';
 import SignupPage from './views/auth/SignupPage';
@@ -13,7 +14,10 @@ import SearchView from './views/SearchView';
 import SOSView from './views/SOSView';
 import ServicesView from './views/ServicesView';
 import AboutView from './views/AboutView';
+
 import ContactView from './views/ContactView';
+import ReportsView from './views/ReportsView';
+import AdminDashboard from './views/AdminDashboard';
 
 const App: React.FC = () => {
   const controller = useAppController();
@@ -23,7 +27,8 @@ const App: React.FC = () => {
     handleLogin, email, setEmail, password, setPassword, handleGoogleSignIn,
     handleSignUp, signUpData, setSignUpData,
     mode, setMode, setData, setSymptomData, query, setQuery, handleSearch, isLoading, data, symptomData, language, hasSearched,
-    handleSOSRequest, emergencyData, setEmergencyData, isSOSOpen, setIsSOSOpen
+    handleSOSRequest, emergencyData, setEmergencyData, isSOSOpen, setIsSOSOpen,
+    showWelcome, setShowWelcome, completeWelcome
   } = controller;
 
   const renderContent = () => {
@@ -65,8 +70,9 @@ const App: React.FC = () => {
         return <AboutView />;
       case 'contact':
         return <ContactView />;
-      case 'profile':
       case 'reports':
+        return <ReportsView />;
+      case 'profile':
       default:
         return <div className="py-24 text-center font-black opacity-20 text-4xl">UPCOMING FEATURE</div>;
     }
@@ -96,6 +102,11 @@ const App: React.FC = () => {
         {view === 'login' && (
           <LoginPage
             setView={setView}
+            onDemoLogin={() => {
+              // Mock Admin Login
+              controller.setRole('ADMIN');
+              controller.setView('app');
+            }}
           />
         )}
 
@@ -105,9 +116,11 @@ const App: React.FC = () => {
           />
         )}
 
-        {((activeTab === 'services' || activeTab === 'about' || activeTab === 'contact') || (view === 'app' && role)) && renderContent()}
+        {((activeTab === 'services' || activeTab === 'about' || activeTab === 'contact') || (view === 'app' && role === 'USER')) && renderContent()}
 
-        <Footer />
+        {view === 'app' && role === 'ADMIN' && <AdminDashboard onLogout={handleLogout} />}
+
+        {((view === 'app' && role === 'ADMIN') || role === 'USER') && <Footer />}
       </main>
 
       {view === 'app' && role === 'USER' && (
@@ -118,6 +131,13 @@ const App: React.FC = () => {
         isOpen={isSOSOpen}
         onClose={() => setIsSOSOpen(false)}
         isSinhala={isSinhala}
+      />
+
+      <WelcomeModal
+        isOpen={showWelcome}
+        onComplete={completeWelcome}
+        setLanguage={setLanguage}
+        language={language}
       />
     </div>
   );

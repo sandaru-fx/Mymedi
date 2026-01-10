@@ -72,12 +72,17 @@ const SearchView: React.FC<SearchViewProps> = ({
         debounceTimer.current = setTimeout(async () => {
             try {
                 setIsLoadingSuggestions(true);
-                const token = await getToken();
-                if (token) {
-                    const results = await fetchMedicineAutocomplete(query, token);
-                    setSuggestions(results);
-                    setShowSuggestions(results.length > 0);
+                // Try to get token, but proceed for autocomplete even if null for now (since backend is public)
+                let token = null;
+                try {
+                    token = await getToken();
+                } catch (e) {
+                    console.log("Not signed in, using public autocomplete");
                 }
+
+                const results = await fetchMedicineAutocomplete(query, token);
+                setSuggestions(results);
+                setShowSuggestions(results.length > 0);
             } catch (error) {
                 console.error('Autocomplete error:', error);
                 setSuggestions([]);

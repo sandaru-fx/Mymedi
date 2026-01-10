@@ -5,9 +5,9 @@ const autocompleteController = require('../controllers/autocompleteController');
 
 const { requireAuth } = require('@clerk/express');
 
-router.post('/medicine-details', requireAuth(), medicalController.getMedicineDetails);
-router.post('/analyze-symptoms', requireAuth(), medicalController.analyzeSymptoms);
-router.post('/emergency-instructions', requireAuth(), medicalController.getEmergencyInstructions);
-router.get('/autocomplete', requireAuth(), autocompleteController.getMedicineAutocomplete);
+router.post('/medicine-details', medicalController.getMedicineDetails);
+router.post('/analyze-symptoms', medicalController.analyzeSymptoms);
+router.post('/emergency-instructions', medicalController.getEmergencyInstructions);
+router.get('/autocomplete', autocompleteController.getMedicineAutocomplete);
 
 module.exports = router;

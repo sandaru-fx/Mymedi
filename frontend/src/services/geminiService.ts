@@ -15,6 +15,7 @@ export const fetchMedicineDetails = async (
       },
       body: JSON.stringify({ medicineName, language }),
     });
+    console.log(`[Frontend] Requesting: ${API_BASE_URL}/medicine-details`); // DEBUG LOG
     if (!response.ok) throw new Error("Failed to retrieve medicine info.");
     return await response.json();
   } catch (error) {

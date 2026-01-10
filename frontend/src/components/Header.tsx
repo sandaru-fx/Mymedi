@@ -10,7 +10,8 @@ import {
     User,
     LogOut,
     Layout,
-    Info
+    Info,
+    MessageSquare
 } from 'lucide-react';
 import { Tab, AuthView, Language, UserRole } from '../models/types';
 import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/clerk-react';
@@ -61,6 +62,7 @@ const Header: React.FC<HeaderProps> = ({
                                 { id: 'search', icon: Search, label: isSinhala ? 'සෙවුම' : 'Search', public: false },
                                 { id: 'sos', icon: AlertTriangle, label: 'SOS', color: 'text-red-600', public: false },
                                 { id: 'about', icon: Info, label: isSinhala ? 'අප ගැන' : 'About', public: true },
+                                { id: 'contact', icon: MessageSquare, label: isSinhala ? 'සම්බන්ධ වන්න' : 'Contact', public: true },
                                 { id: 'reports', icon: FileText, label: isSinhala ? 'වාර්තා' : 'Reports', public: false },
                             ].filter(t => t.public || (view === 'app' && role === 'USER')).map(t => (
                                 <button

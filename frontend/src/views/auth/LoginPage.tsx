@@ -11,8 +11,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ setView }) => {
             <SignIn
                 appearance={{
                     elements: {
-                        rootBox: "mx-auto",
-                        card: "glass-card shadow-2xl rounded-[2.5rem] border-white/50",
+                        rootBox: "mx-auto w-full max-w-[450px]",
                     }
                 }}
                 routing="hash"

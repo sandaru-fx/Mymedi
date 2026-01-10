@@ -1,46 +1,62 @@
 import React from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, MeshWobbleMaterial, Torus } from '@react-three/drei';
+import { OrbitControls, MeshWobbleMaterial, Torus, Float } from '@react-three/drei';
 
 const AboutView = () => {
     return (
-        <div className="bg-slate-900 py-20 px-6 min-h-screen flex items-center w-full">
-            <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center">
+        <div className="bg-slate-900 py-32 px-6 min-h-screen flex items-center w-full relative overflow-hidden">
+            {/* Subtle background glow */}
+            <div className="absolute top-1/4 -left-20 w-96 h-96 bg-blue-500/10 rounded-full blur-[120px]" />
+            <div className="absolute bottom-1/4 -right-20 w-96 h-96 bg-teal-500/10 rounded-full blur-[120px]" />
 
+            <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-20 items-center relative z-10">
                 {/* Left Side: 3D Visualization */}
-                <div className="h-[400px] w-full bg-slate-800/50 rounded-3xl overflow-hidden cursor-grab active:cursor-grabbing">
-                    <Canvas camera={{ position: [0, 0, 5], fov: 50 }}>
-                        <ambientLight intensity={0.5} />
-                        <pointLight position={[10, 10, 10]} />
-                        <Torus args={[1, 0.4, 16, 100]}>
-                            <MeshWobbleMaterial color="#60a5fa" speed={1} factor={0.6} />
-                        </Torus>
+                <div className="h-[500px] w-full glass-card bg-white/5 rounded-[3rem] overflow-hidden cursor-grab active:cursor-grabbing border-white/10 shadow-2xl relative group">
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                    <Canvas camera={{ position: [0, 0, 5], fov: 45 }}>
+                        <ambientLight intensity={0.7} />
+                        <pointLight position={[10, 10, 10]} intensity={1.5} />
+                        <Float speed={2} rotationIntensity={2} floatIntensity={1}>
+                            <Torus args={[1, 0.4, 32, 100]}>
+                                <MeshWobbleMaterial color="#60a5fa" speed={1} factor={0.6} roughness={0.1} metalness={0.8} />
+                            </Torus>
+                        </Float>
                         <OrbitControls enableZoom={false} />
                     </Canvas>
+                    <div className="absolute bottom-6 left-6 right-6 p-4 glass-card bg-white/10 rounded-2xl text-center">
+                        <span className="text-xs font-black text-white/60 uppercase tracking-[0.3em]">Interactive Medical Core</span>
+                    </div>
                 </div>
 
                 {/* Right Side: Content */}
-                <div>
-                    <h4 className="text-blue-500 font-semibold tracking-widest uppercase mb-4">About MyMedi</h4>
-                    <h2 className="text-4xl font-bold text-white mb-6 leading-tight">
-                        Bridging the gap between <br />
-                        <span className="text-blue-500">Patients & Transparency</span>
-                    </h2>
-                    <p className="text-gray-400 mb-6 leading-relaxed">
+                <div className="space-y-10">
+                    <div className="space-y-4">
+                        <h4 className="text-teal-500 font-black tracking-[0.4em] uppercase text-sm">Our Mission</h4>
+                        <h2 className="text-6xl font-black text-white leading-[0.9] tracking-tighter">
+                            Bridging the gap between <br />
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-teal-400">Patients & Transparency</span>
+                        </h2>
+                    </div>
+
+                    <p className="text-xl text-slate-400 font-bold leading-relaxed">
                         MyMedi was born out of a simple necessity: Ensure that no Sri Lankan citizen is overcharged for life-saving medications. We provide a platform where technology meets social responsibility.
                     </p>
-                    <div className="space-y-4">
-                        <div className="flex items-center gap-4 text-white">
-                            <div className="w-2 h-2 bg-blue-500 rounded-full" />
-                            <span>Real-time data synchronization with official sources.</span>
-                        </div>
-                        <div className="flex items-center gap-4 text-white">
-                            <div className="w-2 h-2 bg-blue-500 rounded-full" />
-                            <span>Direct reporting channel for consumer protection.</span>
-                        </div>
+
+                    <div className="grid gap-6">
+                        {[
+                            "Real-time data synchronization with official sources.",
+                            "Direct reporting channel for consumer protection.",
+                            "Transparent pricing for all essential medications."
+                        ].map((text, i) => (
+                            <div key={i} className="flex items-center gap-5 p-4 glass-card bg-white/5 rounded-2xl border-white/5 hover:bg-white/10 transition-all">
+                                <div className="w-3 h-3 bg-teal-500 rounded-full shadow-[0_0_10px_rgba(20,184,166,0.5)]" />
+                                <span className="text-lg text-slate-200 font-bold">{text}</span>
+                            </div>
+                        ))}
                     </div>
-                    <button className="mt-8 px-8 py-3 bg-blue-600 text-white font-bold rounded-full hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20">
-                        Learn More
+
+                    <button className="px-12 py-5 bg-blue-600 text-white font-black text-xl rounded-2xl hover:bg-blue-700 hover:scale-105 active:scale-95 transition-all shadow-2xl shadow-blue-500/30">
+                        Join Our Community
                     </button>
                 </div>
             </div>

@@ -12,6 +12,7 @@ import SearchView from './views/SearchView';
 import SOSView from './views/SOSView';
 import ServicesView from './views/ServicesView';
 import AboutView from './views/AboutView';
+import ContactView from './views/ContactView';
 
 const App: React.FC = () => {
   const controller = useAppController();
@@ -60,6 +61,8 @@ const App: React.FC = () => {
         return <ServicesView />;
       case 'about':
         return <AboutView />;
+      case 'contact':
+        return <ContactView />;
       case 'profile':
       case 'reports':
       default:
@@ -84,40 +87,29 @@ const App: React.FC = () => {
         handleLogout={handleLogout}
       />
 
-      <main className="flex-grow flex flex-col items-center relative z-10 overflow-y-auto">
+      <main className="flex-grow flex flex-col items-center relative z-10 overflow-y-auto w-full">
         {(view === 'landing' || view === 'app') && activeTab === 'home' && view === 'landing' && <LandingPage setView={setView} />}
-
-        {(activeTab === 'services' || activeTab === 'about') && renderContent()}
 
         {view === 'login' && (
           <LoginPage
-            handleLogin={handleLogin}
-            email={email}
-            setEmail={setEmail}
-            password={password}
-            setPassword={setPassword}
             setView={setView}
-            handleGoogleSignIn={handleGoogleSignIn}
           />
         )}
 
         {view === 'signup' && (
           <SignupPage
-            handleSignUp={handleSignUp}
-            signUpData={signUpData}
-            setSignUpData={setSignUpData}
             setView={setView}
           />
         )}
 
-        {view === 'app' && role && renderContent()}
+        {((activeTab === 'services' || activeTab === 'about' || activeTab === 'contact') || (view === 'app' && role)) && renderContent()}
+
+        <Footer />
       </main>
 
       {view === 'app' && role === 'USER' && (
         <MobileNav activeTab={activeTab} setActiveTab={setActiveTab} />
       )}
-
-      <Footer />
     </div>
   );
 };

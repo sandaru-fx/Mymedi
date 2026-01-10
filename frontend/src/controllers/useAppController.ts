@@ -232,8 +232,15 @@ export const useAppController = () => {
             const result = await fetchEmergencyInstructions(situation, language, token);
             setEmergencyData(result);
         } catch (err) {
-            // If AI fails, we still have curated content in state
             console.error("Emergency lookup failed, falling back to curated content.");
+            // Fallback: Create a basic EmergencyInfo object with the situation name
+            setEmergencyData({
+                situation: situation,
+                immediateActions: [],
+                thingsToAvoid: [],
+                emergencyContact: '1990',
+                professionalAdvice: 'Please follow the curated medical instructions below.'
+            });
         } finally {
             setIsLoading(false);
         }

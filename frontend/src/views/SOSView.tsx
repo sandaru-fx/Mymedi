@@ -130,135 +130,145 @@ const SOSView: React.FC<SOSViewProps> = ({
                         exit={{ opacity: 0, y: 50 }}
                         className="glass-card p-0 rounded-[4rem] border-2 border-white/50 dark:border-slate-800 shadow-2xl overflow-hidden relative"
                     >
-                        {/* Detailed Card Header */}
-                        <div className="grid grid-cols-1 lg:grid-cols-2 h-full min-h-[500px]">
-                            <div className="relative overflow-hidden bg-slate-950 group h-[400px] lg:h-auto">
-                                <motion.img
-                                    initial={{ scale: 1.1 }}
-                                    animate={{ scale: 1 }}
-                                    src={sosCuratedContent[emergencyData.situation as keyof typeof sosCuratedContent]?.image || '/src/assets/heart_attack.png'}
-                                    alt={emergencyData.situation}
-                                    className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-[2000ms]"
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-r from-slate-950/80 via-slate-950/20 to-transparent"></div>
-                                <div className="absolute top-10 left-10 z-20">
-                                    <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-red-600 text-white font-black text-xs uppercase tracking-widest shadow-xl">
-                                        <ShieldAlert className="w-5 h-5" /> {isSinhala ? 'ප්‍රමුඛතාවය 1' : 'Priority Alpha'}
-                                    </div>
-                                </div>
-                            </div>
+                        {(() => {
+                            const situationLower = emergencyData.situation.toLowerCase();
+                            const contentKey = Object.keys(sosCuratedContent).find(k => k.toLowerCase() === situationLower) as keyof typeof sosCuratedContent;
+                            const curatedDetails = contentKey ? sosCuratedContent[contentKey] : null;
 
-                            <div className="p-10 md:p-16 space-y-12 bg-white dark:bg-slate-900 flex flex-col justify-center">
-                                <div className="space-y-4">
-                                    <h3 className="text-5xl md:text-6xl font-black text-slate-900 dark:text-white tracking-tighter leading-none uppercase">
-                                        {emergencyData.situation}
-                                    </h3>
-                                    <div className="flex items-center gap-3 text-slate-400 font-bold uppercase tracking-widest text-sm">
-                                        <Info className="w-5 h-5 text-red-500" />
-                                        {isSinhala ? 'වෛද්‍ය මාර්ගෝපදේශය' : 'Verified Medical Protocol'}
-                                    </div>
-                                </div>
-
-                                <div className="p-8 bg-slate-950 rounded-[2.5rem] relative overflow-hidden group border border-slate-800">
-                                    <div className="absolute top-0 right-0 w-32 h-32 bg-teal-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-                                    <div className="relative z-10 space-y-3">
-                                        <div className="flex items-center gap-2 text-teal-400 text-[10px] font-black uppercase tracking-[0.3em]">
-                                            <Sparkles className="w-4 h-4" /> Professional Tip
-                                        </div>
-                                        <p className="text-xl font-bold text-slate-200 italic leading-relaxed">
-                                            "{sosCuratedContent[emergencyData.situation as keyof typeof sosCuratedContent]?.tip || emergencyData.professionalAdvice}"
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div className="flex gap-4">
-                                    <a href="tel:1990" className="flex-1 bg-red-600 text-white p-6 rounded-3xl font-black text-center text-lg shadow-xl shadow-red-600/20 flex items-center justify-center gap-3">
-                                        <PhoneCall className="w-6 h-6" /> 1990 Call
-                                    </a>
-                                    <button
-                                        onClick={() => setEmergencyData(null)}
-                                        className="p-6 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-3xl"
-                                    >
-                                        <ChevronDown className="w-8 h-8 rotate-180" />
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Action List Section */}
-                        <div className="p-10 md:p-16 bg-slate-50/50 dark:bg-slate-950/20 border-t border-slate-200 dark:border-slate-800">
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
-                                {/* Success Steps */}
-                                <div className="space-y-10">
-                                    <div className="flex items-center gap-5">
-                                        <div className="p-4 bg-emerald-500 text-white rounded-[1.5rem] shadow-lg shadow-emerald-500/20">
-                                            <CheckCircle className="w-8 h-8" />
-                                        </div>
-                                        <div>
-                                            <h4 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">{isSinhala ? 'වහාම අනුගමනය කළ යුතු පියවර' : 'Critical Response Steps'}</h4>
-                                            <p className="text-slate-500 font-bold uppercase text-xs tracking-widest mt-1">Life-saving actions</p>
-                                        </div>
-                                    </div>
-                                    <div className="space-y-4">
-                                        {(sosCuratedContent[emergencyData.situation as keyof typeof sosCuratedContent]?.actions || emergencyData.immediateActions).map((action: string, i: number) => (
-                                            <motion.div
-                                                key={i}
-                                                initial={{ x: -20, opacity: 0 }}
-                                                animate={{ x: 0, opacity: 1 }}
-                                                transition={{ delay: i * 0.1 }}
-                                                className="flex items-start gap-6 p-7 bg-white dark:bg-slate-900/60 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all group"
-                                            >
-                                                <span className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center font-black shrink-0 text-xl shadow-lg ring-4 ring-emerald-500/10">{i + 1}</span>
-                                                <p className="font-bold text-slate-700 dark:text-slate-200 text-xl leading-relaxed">{action}</p>
-                                            </motion.div>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* Things to Avoid */}
-                                <div className="space-y-10">
-                                    <div className="flex items-center gap-5">
-                                        <div className="p-4 bg-rose-500 text-white rounded-[1.5rem] shadow-lg shadow-rose-500/20">
-                                            <XCircle className="w-8 h-8" />
-                                        </div>
-                                        <div>
-                                            <h4 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">{isSinhala ? 'නොකළ යුතු දෑ' : 'Never Do These'}</h4>
-                                            <p className="text-slate-500 font-bold uppercase text-xs tracking-widest mt-1">Hazardous mistakes</p>
-                                        </div>
-                                    </div>
-                                    <div className="grid grid-cols-1 gap-4">
-                                        {(sosCuratedContent[emergencyData.situation as keyof typeof sosCuratedContent]?.avoid || emergencyData.thingsToAvoid).map((thing: string, i: number) => (
-                                            <motion.div
-                                                key={i}
-                                                initial={{ x: 20, opacity: 0 }}
-                                                animate={{ x: 0, opacity: 1 }}
-                                                transition={{ delay: i * 0.1 }}
-                                                className="flex items-center gap-6 p-7 bg-rose-50 dark:bg-rose-950/20 rounded-[2.5rem] border border-rose-200 dark:border-rose-900/30 group"
-                                            >
-                                                <div className="w-10 h-10 rounded-xl bg-rose-500/20 text-rose-600 dark:text-rose-400 flex items-center justify-center font-black shrink-0 text-lg">X</div>
-                                                <p className="font-bold text-rose-900/90 dark:text-rose-100/90 text-xl leading-snug">{thing}</p>
-                                            </motion.div>
-                                        ))}
-                                    </div>
-
-                                    {/* Footer Helpline */}
-                                    <div className="mt-12 p-10 bg-gradient-to-br from-slate-900 to-slate-950 rounded-[3rem] border border-slate-800 relative overflow-hidden">
-                                        <div className="flex flex-col items-center text-center gap-6 relative z-10">
-                                            <p className="text-slate-400 font-black text-xs uppercase tracking-[0.3em]">Need Professional Advice?</p>
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-14 h-14 bg-red-600 rounded-2xl flex items-center justify-center text-white shadow-xl">
-                                                    <PhoneCall className="w-8 h-8" />
+                            return (
+                                <>
+                                    {/* Detailed Card Header */}
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 h-full min-h-[500px]">
+                                        <div className="relative overflow-hidden bg-slate-950 group h-[400px] lg:h-auto">
+                                            <motion.img
+                                                initial={{ scale: 1.1 }}
+                                                animate={{ scale: 1 }}
+                                                src={curatedDetails?.image || '/src/assets/heart_attack.png'}
+                                                alt={emergencyData.situation}
+                                                className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-[2000ms]"
+                                            />
+                                            <div className="absolute inset-0 bg-gradient-to-r from-slate-950/80 via-slate-950/20 to-transparent"></div>
+                                            <div className="absolute top-10 left-10 z-20">
+                                                <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-red-600 text-white font-black text-xs uppercase tracking-widest shadow-xl">
+                                                    <ShieldAlert className="w-5 h-5" /> {isSinhala ? 'ප්‍රමුඛතාවය 1' : 'Priority Alpha'}
                                                 </div>
-                                                <div>
-                                                    <p className="text-4xl font-black text-white tracking-tighter">011-2686143</p>
-                                                    <p className="text-[10px] font-black text-teal-500 uppercase tracking-widest">Poison Information Centre</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="p-10 md:p-16 space-y-12 bg-white dark:bg-slate-900 flex flex-col justify-center">
+                                            <div className="space-y-4">
+                                                <h3 className="text-5xl md:text-6xl font-black text-slate-900 dark:text-white tracking-tighter leading-none uppercase">
+                                                    {emergencyData.situation}
+                                                </h3>
+                                                <div className="flex items-center gap-3 text-slate-400 font-bold uppercase tracking-widest text-sm">
+                                                    <Info className="w-5 h-5 text-red-500" />
+                                                    {isSinhala ? 'වෛද්‍ය මාර්ගෝපදේශය' : 'Verified Medical Protocol'}
+                                                </div>
+                                            </div>
+
+                                            <div className="p-8 bg-slate-950 rounded-[2.5rem] relative overflow-hidden group border border-slate-800">
+                                                <div className="absolute top-0 right-0 w-32 h-32 bg-teal-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+                                                <div className="relative z-10 space-y-3">
+                                                    <div className="flex items-center gap-2 text-teal-400 text-[10px] font-black uppercase tracking-[0.3em]">
+                                                        <Sparkles className="w-4 h-4" /> Professional Tip
+                                                    </div>
+                                                    <p className="text-xl font-bold text-slate-200 italic leading-relaxed">
+                                                        "{curatedDetails?.tip || emergencyData.professionalAdvice}"
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex gap-4">
+                                                <a href="tel:1990" className="flex-1 bg-red-600 text-white p-6 rounded-3xl font-black text-center text-lg shadow-xl shadow-red-600/20 flex items-center justify-center gap-3">
+                                                    <PhoneCall className="w-6 h-6" /> 1990 Call
+                                                </a>
+                                                <button
+                                                    onClick={() => setEmergencyData(null)}
+                                                    className="p-6 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-3xl"
+                                                >
+                                                    <ChevronDown className="w-8 h-8 rotate-180" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Action List Section */}
+                                    <div className="p-10 md:p-16 bg-slate-50/50 dark:bg-slate-950/20 border-t border-slate-200 dark:border-slate-800">
+                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
+                                            {/* Success Steps */}
+                                            <div className="space-y-10">
+                                                <div className="flex items-center gap-5">
+                                                    <div className="p-4 bg-emerald-500 text-white rounded-[1.5rem] shadow-lg shadow-emerald-500/20">
+                                                        <CheckCircle className="w-8 h-8" />
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">{isSinhala ? 'වහාම අනුගමනය කළ යුතු පියවර' : 'Critical Response Steps'}</h4>
+                                                        <p className="text-slate-500 font-bold uppercase text-xs tracking-widest mt-1">Life-saving actions</p>
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-4">
+                                                    {(curatedDetails?.actions || emergencyData.immediateActions).map((action: string, i: number) => (
+                                                        <motion.div
+                                                            key={i}
+                                                            initial={{ x: -20, opacity: 0 }}
+                                                            animate={{ x: 0, opacity: 1 }}
+                                                            transition={{ delay: i * 0.1 }}
+                                                            className="flex items-start gap-6 p-7 bg-white dark:bg-slate-900/60 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all group"
+                                                        >
+                                                            <span className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center font-black shrink-0 text-xl shadow-lg ring-4 ring-emerald-500/10">{i + 1}</span>
+                                                            <p className="font-bold text-slate-700 dark:text-slate-200 text-xl leading-relaxed">{action}</p>
+                                                        </motion.div>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            {/* Things to Avoid */}
+                                            <div className="space-y-10">
+                                                <div className="flex items-center gap-5">
+                                                    <div className="p-4 bg-rose-500 text-white rounded-[1.5rem] shadow-lg shadow-rose-500/20">
+                                                        <XCircle className="w-8 h-8" />
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">{isSinhala ? 'නොකළ යුතු දෑ' : 'Never Do These'}</h4>
+                                                        <p className="text-slate-500 font-bold uppercase text-xs tracking-widest mt-1">Hazardous mistakes</p>
+                                                    </div>
+                                                </div>
+                                                <div className="grid grid-cols-1 gap-4">
+                                                    {(curatedDetails?.avoid || emergencyData.thingsToAvoid).map((thing: string, i: number) => (
+                                                        <motion.div
+                                                            key={i}
+                                                            initial={{ x: 20, opacity: 0 }}
+                                                            animate={{ x: 0, opacity: 1 }}
+                                                            transition={{ delay: i * 0.1 }}
+                                                            className="flex items-center gap-6 p-7 bg-rose-50 dark:bg-rose-950/20 rounded-[2.5rem] border border-rose-200 dark:border-rose-900/30 group"
+                                                        >
+                                                            <div className="w-10 h-10 rounded-xl bg-rose-500/20 text-rose-600 dark:text-rose-400 flex items-center justify-center font-black shrink-0 text-lg">X</div>
+                                                            <p className="font-bold text-rose-900/90 dark:text-rose-100/90 text-xl leading-snug">{thing}</p>
+                                                        </motion.div>
+                                                    ))}
+                                                </div>
+
+                                                {/* Footer Helpline */}
+                                                <div className="mt-12 p-10 bg-gradient-to-br from-slate-900 to-slate-950 rounded-[3rem] border border-slate-800 relative overflow-hidden">
+                                                    <div className="flex flex-col items-center text-center gap-6 relative z-10">
+                                                        <p className="text-slate-400 font-black text-xs uppercase tracking-[0.3em]">Need Professional Advice?</p>
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="w-14 h-14 bg-red-600 rounded-2xl flex items-center justify-center text-white shadow-xl">
+                                                                <PhoneCall className="w-8 h-8" />
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-4xl font-black text-white tracking-tighter">011-2686143</p>
+                                                                <p className="text-[10px] font-black text-teal-500 uppercase tracking-widest">Poison Information Centre</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                            </div>
-                        </div>
+                                </>
+                            );
+                        })()}
                     </motion.div>
                 )}
             </AnimatePresence>

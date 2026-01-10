@@ -68,32 +68,49 @@ const SOSView: React.FC<SOSViewProps> = ({
                         </div>
 
                         {/* Quick Situations Grid */}
-                        <div className="grid grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
                             {[
-                                { situation: isSinhala ? 'Snake Bite' : 'Snake Bite', label: isSinhala ? 'සර්ප දෂ්ඨනය' : 'Snake Bite', icon: AlertCircle, color: 'from-amber-500 to-orange-600' },
-                                { situation: isSinhala ? 'Dog Bite' : 'Dog Bite', label: isSinhala ? 'බල්ලා දෂ්ඨ කිරීම' : 'Dog Bite', icon: ShieldAlert, color: 'from-blue-500 to-indigo-600' },
-                                { situation: isSinhala ? 'Choking' : 'Choking', label: isSinhala ? 'හුස්ම හිරවීම' : 'Choking', icon: Zap, color: 'from-sky-500 to-cyan-600' },
-                                { situation: isSinhala ? 'Severe Bleeding' : 'Severe Bleeding', label: isSinhala ? 'දැඩි රුධිර වහනය' : 'Severe Bleeding', icon: Flame, color: 'from-red-500 to-rose-600' },
-                                { situation: isSinhala ? 'Poisoning' : 'Poisoning', label: isSinhala ? 'විෂ වීම්' : 'Poisoning', icon: Ban, color: 'from-purple-500 to-fuchsia-600' },
-                                { situation: isSinhala ? 'Heart Attack' : 'Heart Attack', label: isSinhala ? 'හෘදයාබාධ' : 'Heart Attack', icon: Activity, color: 'from-emerald-500 to-teal-600' }
-                            ].map((item, i) => (
-                                <motion.button
-                                    key={i}
-                                    whileHover={{ y: -8, scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
-                                    onClick={() => handleSOSRequest(item.situation)}
-                                    className="group relative bg-white dark:bg-slate-900/50 p-10 rounded-[3.5rem] border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden text-left"
-                                >
-                                    <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${item.color} opacity-0 group-hover:opacity-10 transition-opacity blur-2xl`}></div>
-                                    <div className={`p-6 bg-gradient-to-br ${item.color} text-white rounded-3xl mb-6 shadow-lg transform group-hover:rotate-6 transition-transform duration-500 inline-block`}>
-                                        <item.icon className="w-10 h-10" />
-                                    </div>
-                                    <h4 className="text-xl font-black text-slate-900 dark:text-white mb-2 uppercase tracking-tight">{item.label}</h4>
-                                    <div className="flex items-center gap-2 text-slate-400 group-hover:text-red-500 transition-colors font-bold text-sm">
-                                        {isSinhala ? 'උපදෙස් බලන්න' : 'View Protocol'} <ArrowRight className="w-4 h-4" />
-                                    </div>
-                                </motion.button>
-                            ))}
+                                { situation: 'Snake Bite', label: isSinhala ? 'සර්ප දෂ්ඨනය' : 'Snake Bite', icon: AlertCircle, color: 'from-amber-500 to-orange-600' },
+                                { situation: 'Dog Bite', label: isSinhala ? 'බල්ලා දෂ්ඨ කිරීම' : 'Dog Bite', icon: ShieldAlert, color: 'from-blue-500 to-indigo-600' },
+                                { situation: 'Choking', label: isSinhala ? 'හුස්ම හිරවීම' : 'Choking', icon: Zap, color: 'from-sky-500 to-cyan-600' },
+                                { situation: 'Severe Bleeding', label: isSinhala ? 'දැඩි රුධිර වහනය' : 'Severe Bleeding', icon: Flame, color: 'from-red-500 to-rose-600' },
+                                { situation: 'Poisoning', label: isSinhala ? 'විෂ වීම්' : 'Poisoning', icon: Ban, color: 'from-purple-500 to-fuchsia-600' },
+                                { situation: 'Heart Attack', label: isSinhala ? 'හෘදයාබාධ' : 'Heart Attack', icon: Activity, color: 'from-emerald-500 to-teal-600' }
+                            ].map((item, i) => {
+                                const curated = (sosCuratedContent as any)[item.situation];
+                                return (
+                                    <motion.button
+                                        key={i}
+                                        whileHover={{ y: -10, scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        onClick={() => handleSOSRequest(item.situation)}
+                                        className="group relative bg-white dark:bg-slate-900/50 h-[320px] rounded-[3.5rem] border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden text-left"
+                                    >
+                                        {/* Background Image with Gradient Overlay */}
+                                        <div className="absolute inset-0 z-0">
+                                            <img
+                                                src={curated?.image || '/src/assets/heart_attack.png'}
+                                                alt={item.label}
+                                                className="w-full h-full object-cover opacity-20 group-hover:opacity-40 group-hover:scale-110 transition-all duration-1000"
+                                            />
+                                            <div className="absolute inset-0 bg-gradient-to-t from-white dark:from-slate-900 via-white/80 dark:via-slate-900/80 to-transparent"></div>
+                                        </div>
+
+                                        <div className="relative z-10 p-10 flex flex-col h-full">
+                                            <div className={`p-5 bg-gradient-to-br ${item.color} text-white rounded-2xl mb-auto shadow-lg transform group-hover:rotate-6 transition-transform duration-500 inline-block w-fit`}>
+                                                <item.icon className="w-8 h-8" />
+                                            </div>
+
+                                            <div className="mt-4">
+                                                <h4 className="text-2xl font-black text-slate-900 dark:text-white mb-2 uppercase tracking-tight leading-tight">{item.label}</h4>
+                                                <div className="flex items-center gap-2 text-slate-400 group-hover:text-red-500 transition-colors font-bold text-sm">
+                                                    {isSinhala ? 'විස්තර බලන්න' : 'View Protocol'} <ArrowRight className="w-4 h-4" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </motion.button>
+                                );
+                            })}
                         </div>
 
                         {/* Suwa Seriya CTA */}

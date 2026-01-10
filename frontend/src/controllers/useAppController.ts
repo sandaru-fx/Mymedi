@@ -59,6 +59,7 @@ export const useAppController = () => {
     const [data, setData] = useState<MedicineInfo | null>(null);
     const [symptomData, setSymptomData] = useState<SymptomAnalysis | null>(null);
     const [emergencyData, setEmergencyData] = useState<EmergencyInfo | null>(null);
+    const [isSOSOpen, setIsSOSOpen] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [hasSearched, setHasSearched] = useState(false);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -268,6 +269,7 @@ export const useAppController = () => {
         data, setData,
         symptomData, setSymptomData,
         emergencyData, setEmergencyData,
+        isSOSOpen, setIsSOSOpen,
         error, setError,
         hasSearched, setHasSearched,
         isListening, setIsListening,

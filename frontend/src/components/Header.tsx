@@ -27,6 +27,7 @@ interface HeaderProps {
     setLanguage: (lang: Language) => void;
     setIsDarkMode: (val: boolean) => void;
     handleLogout: () => void;
+    setIsSOSOpen: (val: boolean) => void;
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -39,7 +40,8 @@ const Header: React.FC<HeaderProps> = ({
     setActiveTab,
     setLanguage,
     setIsDarkMode,
-    handleLogout
+    handleLogout,
+    setIsSOSOpen
 }) => {
     return (
         <header className="sticky top-0 w-full z-[100] transition-all duration-300">
@@ -67,7 +69,14 @@ const Header: React.FC<HeaderProps> = ({
                             ].filter(t => t.public || (view === 'app' && role === 'USER')).map(t => (
                                 <button
                                     key={t.id}
-                                    onClick={() => setActiveTab(t.id as Tab)}
+                                    onClick={() => {
+                                        if (t.id === 'sos') {
+                                            setIsSOSOpen(true);
+                                            setActiveTab('sos');
+                                        } else {
+                                            setActiveTab(t.id as Tab);
+                                        }
+                                    }}
                                     className={`px-5 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${activeTab === t.id ? (t.id === 'sos' ? 'bg-red-500/10 text-red-600' : 'bg-teal-500/10 text-teal-600') : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
                                 >
                                     <t.icon className="w-4 h-4" />

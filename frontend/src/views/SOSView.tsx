@@ -8,7 +8,8 @@ import {
     Activity,
     PhoneCall,
     CheckCircle,
-    Sparkles
+    Sparkles,
+    AlertCircle
 } from 'lucide-react';
 import Loader from '../components/Loader';
 import { getSosCuratedContent } from '../models/staticData';
@@ -50,11 +51,15 @@ const SOSView: React.FC<SOSViewProps> = ({
                     { situation: isSinhala ? 'විෂ වීම්' : 'Poisoning', icon: Ban },
                     { situation: isSinhala ? 'හෘදයාබාධ ලක්ෂණ' : 'Heart Attack', icon: Activity }
                 ].map((item, i) => (
-                    <button key={i} onClick={() => handleSOSRequest(item.situation)} className="glass-card p-8 rounded-[2.5rem] border-2 border-transparent hover:border-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all flex flex-col items-center gap-4 group shadow-xl">
-                        <div className="p-4 bg-red-100 text-red-600 rounded-2xl group-hover:scale-110 transition-transform">
-                            <item.icon className="w-8 h-8" />
+                    <button
+                        key={i}
+                        onClick={() => handleSOSRequest(item.situation)}
+                        className="glass-card p-8 rounded-[2.5rem] border-2 border-transparent hover:border-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all flex flex-col items-center gap-4 group shadow-xl active:scale-95"
+                    >
+                        <div className="p-5 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-2xl group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+                            <item.icon className="w-10 h-10" />
                         </div>
-                        <span className="font-black text-sm uppercase tracking-widest">{item.situation}</span>
+                        <span className="font-black text-sm uppercase tracking-widest text-slate-700 dark:text-slate-200">{item.situation}</span>
                     </button>
                 ))}
             </div>

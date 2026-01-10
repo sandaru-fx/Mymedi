@@ -4,6 +4,7 @@ import MedicalScene from './components/MedicalScene';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import MobileNav from './components/MobileNav';
+import SOSModal from './components/SOSModal';
 import LandingPage from './views/auth/LandingPage';
 import LoginPage from './views/auth/LoginPage';
 import SignupPage from './views/auth/SignupPage';
@@ -22,7 +23,7 @@ const App: React.FC = () => {
     handleLogin, email, setEmail, password, setPassword, handleGoogleSignIn,
     handleSignUp, signUpData, setSignUpData,
     mode, setMode, setData, setSymptomData, query, setQuery, handleSearch, isLoading, data, symptomData, language, hasSearched,
-    handleSOSRequest, emergencyData, setEmergencyData
+    handleSOSRequest, emergencyData, setEmergencyData, isSOSOpen, setIsSOSOpen
   } = controller;
 
   const renderContent = () => {
@@ -85,6 +86,7 @@ const App: React.FC = () => {
         setLanguage={setLanguage}
         setIsDarkMode={setIsDarkMode}
         handleLogout={handleLogout}
+        setIsSOSOpen={setIsSOSOpen}
       />
 
       <main className="flex-grow flex flex-col items-center relative z-10 overflow-y-auto w-full">
@@ -110,6 +112,12 @@ const App: React.FC = () => {
       {view === 'app' && role === 'USER' && (
         <MobileNav activeTab={activeTab} setActiveTab={setActiveTab} />
       )}
+
+      <SOSModal
+        isOpen={isSOSOpen}
+        onClose={() => setIsSOSOpen(false)}
+        isSinhala={isSinhala}
+      />
     </div>
   );
 };

@@ -120,7 +120,7 @@ const App: React.FC = () => {
 
         {view === 'app' && role === 'ADMIN' && <AdminDashboard onLogout={handleLogout} />}
 
-        {((view === 'app' && role === 'ADMIN') || role === 'USER') && <Footer />}
+        {((view === 'app' && role === 'ADMIN') || role === 'USER' || view === 'landing') && <Footer />}
       </main>
 
       {view === 'app' && role === 'USER' && (

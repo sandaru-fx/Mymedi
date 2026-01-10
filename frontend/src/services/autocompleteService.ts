@@ -1,7 +1,7 @@
-import { API_URL } from '../config/constants';
+import { API_BASE_URL } from '../config/apiConfig';
 
 export const fetchMedicineAutocomplete = async (query: string, token: string): Promise<string[]> => {
-    const response = await fetch(`${API_URL}/api/medical/autocomplete?query=${encodeURIComponent(query)}`, {
+    const response = await fetch(`${API_BASE_URL}/autocomplete?query=${encodeURIComponent(query)}`, {
         method: 'GET',
         headers: {
             'Authorization': `Bearer ${token}`,

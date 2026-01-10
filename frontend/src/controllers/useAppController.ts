@@ -221,10 +221,19 @@ export const useAppController = () => {
     };
 
     const handleSOSRequest = async (situation: string) => {
-        // We now use both professional curated content and dynamic AI update
-        setIsLoading(true);
+        // Set initial data immediately to trigger UI transition
+        setEmergencyData({
+            situation: situation,
+            immediateActions: [],
+            thingsToAvoid: [],
+            emergencyContact: '1990',
+            professionalAdvice: 'Consulting medical database...'
+        });
+
+        // Show loader if you want, but for "instant" feel we skip it or show subtle indicator
+        // setIsLoading(true); // Optional: keep it if you want the loader inside the detail view
+
         setError(null);
-        setEmergencyData(null);
         try {
             const token = await getToken();
             if (!token) throw new Error("Not authenticated");
@@ -232,17 +241,8 @@ export const useAppController = () => {
             const result = await fetchEmergencyInstructions(situation, language, token);
             setEmergencyData(result);
         } catch (err) {
-            console.error("Emergency lookup failed, falling back to curated content.");
-            // Fallback: Create a basic EmergencyInfo object with the situation name
-            setEmergencyData({
-                situation: situation,
-                immediateActions: [],
-                thingsToAvoid: [],
-                emergencyContact: '1990',
-                professionalAdvice: 'Please follow the curated medical instructions below.'
-            });
-        } finally {
-            setIsLoading(false);
+            console.error("Emergency AI lookup failed, using curated fallback.");
+            // Curated content is handled in the view via mapping
         }
     };
 

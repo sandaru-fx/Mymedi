@@ -25,11 +25,23 @@ const getMedicineDetails = async (req, res) => {
     });
 
     const prompt = `
-        You are a professional medical assistant.
+        You are a professional medical assistant with expertise in Sri Lankan pharmaceutical market.
         Medicine Name: "${medicineName}"
         Target Language: "${language}"
         
-        Provide high-quality medical information following the schema.
+        Provide comprehensive medical information following the schema.
+        
+        IMPORTANT FOR PRICE RANGE:
+        - Provide the CURRENT Sri Lankan market price range (e.g., "LKR 50 - 80" or "Rs. 150 - 200")
+        - Include both generic and branded versions if applicable
+        - Be specific and realistic based on 2024-2025 Sri Lankan pharmacy prices
+        - If exact price is unknown, provide a reasonable estimate with disclaimer
+        
+        IMPORTANT FOR HOW TO USE:
+        - Provide step-by-step instructions with timing (e.g., "Take 1 tablet every 8 hours")
+        - Include whether to take before/after meals
+        - Mention duration of treatment if applicable
+        - Be clear and specific
     `;
 
     try {

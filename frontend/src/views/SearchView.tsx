@@ -1,15 +1,19 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     Pill,
     Activity,
     ArrowRight,
     AlertTriangle,
     TrendingUp,
-    ChevronRight
+    ChevronRight,
+    Search
 } from 'lucide-react';
+import { useAuth } from '@clerk/clerk-react';
 import Loader from '../components/Loader';
 import MedicineCard from '../components/MedicineCard';
 import { MedicineInfo, SymptomAnalysis, Language } from '../models/types';
+import { fetchMedicineAutocomplete } from '../services/autocompleteService';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface SearchViewProps {
     hasSearched: boolean;
@@ -20,7 +24,7 @@ interface SearchViewProps {
     setSymptomData: (data: SymptomAnalysis | null) => void;
     query: string;
     setQuery: (val: string) => void;
-    handleSearch: (e: React.FormEvent) => void;
+    handleSearch: (e: React.FormEvent, overrideQuery?: string) => void;
     isLoading: boolean;
     data: MedicineInfo | null;
     symptomData: SymptomAnalysis | null;
@@ -42,6 +46,101 @@ const SearchView: React.FC<SearchViewProps> = ({
     symptomData,
     language
 }) => {
+    const { getToken } = useAuth();
+    const [suggestions, setSuggestions] = useState<string[]>([]);
+    const [showSuggestions, setShowSuggestions] = useState(false);
+    const [selectedIndex, setSelectedIndex] = useState(-1);
+    const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+    const searchRef = useRef<HTMLDivElement>(null);
+    const debounceTimer = useRef<NodeJS.Timeout>();
+
+    // Fetch autocomplete suggestions
+    useEffect(() => {
+        if (mode !== 'medicine' || query.length < 2) {
+            setSuggestions([]);
+            setShowSuggestions(false);
+            return;
+        }
+
+        // Debounce the autocomplete request
+        if (debounceTimer.current) {
+            clearTimeout(debounceTimer.current);
+        }
+
+        debounceTimer.current = setTimeout(async () => {
+            try {
+                setIsLoadingSuggestions(true);
+                const token = await getToken();
+                if (token) {
+                    const results = await fetchMedicineAutocomplete(query, token);
+                    setSuggestions(results);
+                    setShowSuggestions(results.length > 0);
+                }
+            } catch (error) {
+                console.error('Autocomplete error:', error);
+                setSuggestions([]);
+            } finally {
+                setIsLoadingSuggestions(false);
+            }
+        }, 300);
+
+        return () => {
+            if (debounceTimer.current) {
+                clearTimeout(debounceTimer.current);
+            }
+        };
+    }, [query, mode, getToken]);
+
+    // Close suggestions when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+                setShowSuggestions(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    // Handle keyboard navigation
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (!showSuggestions || suggestions.length === 0) return;
+
+        switch (e.key) {
+            case 'ArrowDown':
+                e.preventDefault();
+                setSelectedIndex(prev =>
+                    prev < suggestions.length - 1 ? prev + 1 : prev
+                );
+                break;
+            case 'ArrowUp':
+                e.preventDefault();
+                setSelectedIndex(prev => prev > 0 ? prev - 1 : -1);
+                break;
+            case 'Enter':
+                e.preventDefault();
+                if (selectedIndex >= 0) {
+                    selectSuggestion(suggestions[selectedIndex]);
+                } else {
+                    handleSearch(e);
+                }
+                break;
+            case 'Escape':
+                setShowSuggestions(false);
+                setSelectedIndex(-1);
+                break;
+        }
+    };
+
+    const selectSuggestion = (suggestion: string) => {
+        setQuery(suggestion);
+        setShowSuggestions(false);
+        setSelectedIndex(-1);
+        // Trigger search with the selected suggestion
+        handleSearch({ preventDefault: () => { } } as React.FormEvent, suggestion);
+    };
+
     return (
         <div className="w-full max-w-5xl mx-auto pb-24 px-4">
             <div className={`transition-all duration-700 ${hasSearched ? 'mt-4' : 'mt-20'}`}>
@@ -55,7 +154,7 @@ const SearchView: React.FC<SearchViewProps> = ({
                     </div>
                 </div>
 
-                <div className="w-full max-w-3xl mx-auto">
+                <div className="w-full max-w-3xl mx-auto relative" ref={searchRef}>
                     <form onSubmit={handleSearch} className="glass-card rounded-[2.5rem] shadow-2xl p-3 flex flex-col sm:flex-row items-center gap-3 border border-white/50">
                         <div className="flex-grow w-full flex items-center px-6">
                             {mode === 'medicine' ? <Pill className="w-6 h-6 text-teal-500 mr-4" /> : <Activity className="w-6 h-6 text-rose-500 mr-4" />}
@@ -65,7 +164,16 @@ const SearchView: React.FC<SearchViewProps> = ({
                                 placeholder={mode === 'medicine' ? (isSinhala ? "බෙහෙත් නම ඇතුලත් කරන්න..." : "Medicine name...") : (isSinhala ? "ඔබේ අපහසුතා පවසන්න..." : "Describe symptoms...")}
                                 value={query}
                                 onChange={(e) => setQuery(e.target.value)}
+                                onKeyDown={handleKeyDown}
+                                onFocus={() => {
+                                    if (mode === 'medicine' && suggestions.length > 0) {
+                                        setShowSuggestions(true);
+                                    }
+                                }}
                             />
+                            {isLoadingSuggestions && mode === 'medicine' && (
+                                <Search className="w-5 h-5 text-slate-400 animate-pulse" />
+                            )}
                         </div>
                         <div className="flex items-center gap-3 pr-2">
                             <button type="submit" className={`p-4 rounded-[1.5rem] ${mode === 'medicine' ? 'bg-teal-600' : 'bg-rose-500'} text-white shadow-xl hover:scale-105 active:scale-95 transition-all`}>
@@ -73,6 +181,44 @@ const SearchView: React.FC<SearchViewProps> = ({
                             </button>
                         </div>
                     </form>
+
+                    {/* Autocomplete Dropdown */}
+                    <AnimatePresence>
+                        {showSuggestions && mode === 'medicine' && suggestions.length > 0 && (
+                            <motion.div
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                                className="absolute top-full mt-2 w-full glass-card rounded-3xl shadow-2xl border border-white/50 overflow-hidden z-50"
+                            >
+                                <div className="p-2">
+                                    {suggestions.map((suggestion, index) => (
+                                        <motion.button
+                                            key={suggestion}
+                                            initial={{ opacity: 0, x: -10 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            transition={{ delay: index * 0.03 }}
+                                            onClick={() => selectSuggestion(suggestion)}
+                                            className={`w-full text-left px-6 py-4 rounded-2xl font-bold text-slate-700 dark:text-slate-200 transition-all ${selectedIndex === index
+                                                    ? 'bg-teal-500 text-white shadow-lg scale-[1.02]'
+                                                    : 'hover:bg-white/50 dark:hover:bg-slate-800/50'
+                                                }`}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <Pill className={`w-5 h-5 ${selectedIndex === index ? 'text-white' : 'text-teal-500'}`} />
+                                                <span className="text-lg">{suggestion}</span>
+                                            </div>
+                                        </motion.button>
+                                    ))}
+                                </div>
+                                <div className="px-6 py-3 bg-slate-50/50 dark:bg-slate-900/50 border-t border-white/20">
+                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                                        {isSinhala ? 'ඊතල යතුරු භාවිතා කරන්න' : 'Use arrow keys to navigate'}
+                                    </p>
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </div>
             </div>
 

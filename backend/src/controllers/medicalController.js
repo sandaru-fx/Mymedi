@@ -171,8 +171,70 @@ const getEmergencyInstructions = async (req, res) => {
     }
 };
 
+const analyzePrescription = async (req, res) => {
+    const { image, language } = req.body; // Expecting Base64 image string
+
+    if (!image) {
+        return res.status(400).json({ error: "No image provided" });
+    }
+
+    try {
+        const genAI = new GoogleGenAI(process.env.GEMINI_API_KEY);
+        // Use gemini-1.5-flash which supports vision
+        const model = genAI.getGenerativeModel({
+            model: "gemini-1.5-flash",
+            generationConfig: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: SchemaType.OBJECT,
+                    properties: {
+                        medicines: {
+                            type: SchemaType.ARRAY,
+                            items: { type: SchemaType.STRING }
+                        },
+                        confidence: { type: SchemaType.STRING } // e.g., "High", "Medium"
+                    },
+                    required: ["medicines"]
+                }
+            }
+        });
+
+        // Clean base64 string if it has prefix
+        const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
+
+        const prompt = `
+            Analyze this prescription image. 
+            Identify all CLEARLY LEGIBLE medicine names.
+            Return a JSON object with a list of medicine names.
+            Ignore handwriting that is too blurry. 
+            Target Language for context: "${language || 'en'}" (but keep medicine names in English if standard).
+        `;
+
+        const result = await model.generateContent([
+            {
+                inlineData: {
+                    data: base64Data,
+                    mimeType: "image/jpeg",
+                },
+            },
+            prompt,
+        ]);
+
+        const text = result.response.text();
+        const response = JSON.parse(text);
+
+        console.log("[Prescription Analysis] Found:", response);
+        res.json(response);
+
+    } catch (error) {
+        console.error("Prescription Analysis Error:", error);
+        res.status(500).json({ error: "Failed to analyze prescription" });
+    }
+};
+
 module.exports = {
     getMedicineDetails,
     analyzeSymptoms,
-    getEmergencyInstructions
+    getEmergencyInstructions,
+    analyzePrescription
 };

@@ -6,7 +6,13 @@ import {
     AlertTriangle,
     TrendingUp,
     ChevronRight,
-    Search
+    TrendingUp,
+    ChevronRight,
+    Search,
+    Mic,
+    Camera,
+    X,
+    Upload
 } from 'lucide-react';
 import { useAuth } from '@clerk/clerk-react';
 import Loader from '../components/Loader';
@@ -30,6 +36,14 @@ interface SearchViewProps {
     symptomData: SymptomAnalysis | null;
     language: Language;
     error: string | null;
+    isSinhala: boolean; // Explicitly adding for clarity in props interface if needed, though already destructured
+}
+
+// Add WebkitSpeechRecognition type definition
+declare global {
+    interface Window {
+        webkitSpeechRecognition: any;
+    }
 }
 
 const SearchView: React.FC<SearchViewProps> = ({
@@ -148,6 +162,90 @@ const SearchView: React.FC<SearchViewProps> = ({
         handleSearch({ preventDefault: () => { } } as React.FormEvent, suggestion);
     };
 
+    // --- VOICE SEARCH LOGIC ---
+    const [isListening, setIsListening] = useState(false);
+
+    const handleVoiceSearch = () => {
+        if (!('webkitSpeechRecognition' in window)) {
+            alert("Your browser does not support voice search. Please use Google Chrome.");
+            return;
+        }
+
+        const recognition = new window.webkitSpeechRecognition();
+        recognition.lang = isSinhala ? 'si-LK' : 'en-US';
+        recognition.continuous = false;
+        recognition.interimResults = false;
+
+        recognition.onstart = () => setIsListening(true);
+        recognition.onend = () => setIsListening(false);
+
+        recognition.onresult = (event: any) => {
+            const transcript = event.results[0][0].transcript;
+            setQuery(transcript);
+            handleSearch({ preventDefault: () => { } } as React.FormEvent, transcript);
+        };
+
+        recognition.onError = (event: any) => {
+            console.error("Speech recognition error", event.error);
+            setIsListening(false);
+        };
+
+        recognition.start();
+    };
+
+
+    // --- IMAGE PREVIEW & SCAN LOGIC ---
+    const [isAnalyzingImage, setIsAnalyzingImage] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setIsAnalyzingImage(true);
+
+        try {
+            // Convert to Base64
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = async () => {
+                const base64Image = reader.result as string;
+
+                // Call Backend
+                const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/medical/analyze-prescription`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        image: base64Image,
+                        language: isSinhala ? 'Sinhala' : 'English'
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.medicines && data.medicines.length > 0) {
+                    // If multiple medicines found, we could show a modal. 
+                    // For now, let's just pick the first one or populate suggestions
+                    if (data.medicines.length === 1) {
+                        setQuery(data.medicines[0]);
+                        handleSearch({ preventDefault: () => { } } as React.FormEvent, data.medicines[0]);
+                    } else {
+                        setSuggestions(data.medicines);
+                        setShowSuggestions(true);
+                        setQuery(data.medicines[0]); // Autofill first but let user choose
+                    }
+                } else {
+                    alert("No medicines found in the image. Please try a clearer photo.");
+                }
+                setIsAnalyzingImage(false);
+            };
+        } catch (error) {
+            console.error(error);
+            alert("Failed to analyze image.");
+            setIsAnalyzingImage(false);
+        }
+    };
+
     return (
         <div className="w-full max-w-5xl mx-auto pb-24 px-4">
             <div className={`transition-all duration-700 ${hasSearched ? 'mt-4' : 'mt-20'}`}>
@@ -176,8 +274,38 @@ const SearchView: React.FC<SearchViewProps> = ({
                                     if (mode === 'medicine' && suggestions.length > 0) {
                                         setShowSuggestions(true);
                                     }
+                                }
                                 }}
                             />
+
+                            {/* VOICE & CAMERA ICONS */}
+                            <div className="flex items-center gap-2 mr-2">
+                                <button
+                                    type="button"
+                                    onClick={handleVoiceSearch}
+                                    className={`p-2 rounded-full transition-all ${isListening ? 'bg-rose-500 text-white animate-pulse' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600'}`}
+                                    title="Voice Search"
+                                >
+                                    <Mic className="w-5 h-5" />
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className={`p-2 rounded-full transition-all ${isAnalyzingImage ? 'bg-teal-500 text-white animate-pulse' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600'}`}
+                                    title="Scan Prescription"
+                                >
+                                    <Camera className="w-5 h-5" />
+                                </button>
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    className="hidden"
+                                    accept="image/*"
+                                    onChange={handleImageUpload}
+                                />
+                            </div>
+
                             {isLoadingSuggestions && mode === 'medicine' && (
                                 <Search className="w-5 h-5 text-slate-400 animate-pulse" />
                             )}

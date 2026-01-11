@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { useAuth } from '@clerk/clerk-react';
+import { useAuth, useUser } from '@clerk/clerk-react';
 import {
     fetchMedicineDetails,
     analyzeSymptoms,
@@ -21,6 +21,7 @@ import {
 
 export const useAppController = () => {
     const { getToken, isLoaded, isSignedIn } = useAuth();
+    const { user } = useUser();
     const [view, setView] = useState<AuthView>('landing');
     const [role, setRole] = useState<UserRole>(null);
     const [activeTab, setActiveTab] = useState<Tab>('home');
@@ -118,14 +119,41 @@ export const useAppController = () => {
     }, [isDarkMode]);
 
     useEffect(() => {
-        if (isLoaded && isSignedIn) {
+        if (isLoaded && isSignedIn && user) {
+            const email = user.primaryEmailAddress?.emailAddress;
+
+            // Sync Clerk user to local currentUser state
+            setCurrentUser({
+                id: user.id,
+                fullName: user.fullName || email || 'User',
+                email: email || '',
+                nic: '',
+                phone: '',
+            });
+
+            if (email === 'admin@nmra.gov.lk') {
+                setRole('ADMIN');
+            } else {
+                setRole('USER');
+            }
             setView('app');
-            setRole('USER');
         } else if (isLoaded && !isSignedIn) {
-            setView('landing');
-            setRole(null);
+            // Only reset if we are NOT in a manually set admin session (e.g. via Demo Login)
+            // But wait, Demo Login sets state directly. This effect might overwrite it if isSignedIn is false.
+            // Actually, for Demo Login, isSignedIn is false. So this block runs.
+            // We need to protect the Demo Login state.
+            // Let's assume Demo Login is transient and works because we set View='app'.
+            // But if we are on 'app' and isSignedIn is false, this block will reset us to landing.
+
+            // FIX: Only redirect to landing if we are currently on a restricted view AND we are not manually authorized.
+            // For now, let's just respect the current View if it is 'app' and Role is 'ADMIN' (Demo case).
+            if (role !== 'ADMIN') {
+                setView('landing');
+                setRole(null);
+                setCurrentUser(null);
+            }
         }
-    }, [isLoaded, isSignedIn]);
+    }, [isLoaded, isSignedIn, user, role]);
 
     const adminAnalytics = useMemo(() => {
         const total = inquiries.length;

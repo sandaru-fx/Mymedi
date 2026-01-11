@@ -23,7 +23,23 @@ const userSchema = new mongoose.Schema({
     isBanned: {
         type: Boolean,
         default: false
-    }
+    },
+    phone: {
+        type: String,
+        default: ''
+    },
+    nic: {
+        type: String,
+        default: ''
+    },
+    address: {
+        type: String,
+        default: ''
+    },
+    savedMedicines: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Medicine'
+    }]
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);

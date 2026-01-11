@@ -3,6 +3,7 @@ import { API_BASE_URL } from '../config/apiConfig';
 import { MessageSquare, Send, CheckCircle, XCircle, Clock, Image as ImageIcon } from 'lucide-react';
 
 interface Medicine {
+    _id: string;
     image?: string; // Base64 or URL
     medicineName: string;
     description: string;
@@ -10,6 +11,8 @@ interface Medicine {
     uses: string;
     howToUse: string;
     sideEffects?: string[];
+    foodInteractions?: string;
+    disclaimer?: string;
 }
 
 interface Message {
@@ -27,9 +30,22 @@ interface User {
     createdAt: string;
 }
 
+interface ContactMessage {
+    _id: string;
+    name: string;
+    email: string;
+    subject: string;
+    message: string;
+    status: 'Unread' | 'Read' | 'Replied';
+    adminReply?: string;
+    isBlocked: boolean;
+    createdAt: string;
+}
+
 interface Report {
     _id: string;
     userEmail: string;
+    nic?: string;
     pharmacyName: string;
     medicineName: string;
     pricePaid: string;
@@ -45,8 +61,70 @@ interface AdminDashboardProps {
     onLogout: () => void;
 }
 
+import { useAuth } from '@clerk/clerk-react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+
+// Fix Leaflet icon issue
+// @ts-ignore
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+    iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+    iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
+
+// District Coordinates for Sri Lanka
+const DISTRICT_COORDS: Record<string, [number, number]> = {
+    "Colombo": [6.9271, 79.8612],
+    "Gampaha": [7.0840, 80.0098],
+    "Kalutara": [6.5854, 79.9607],
+    "Kandy": [7.2906, 80.6337],
+    "Matale": [7.4675, 80.6234],
+    "Nuwara Eliya": [6.9497, 80.7891],
+    "Galle": [6.0535, 80.2210],
+    "Matara": [5.9549, 80.5550],
+    "Hambantota": [6.1246, 81.1245],
+    "Jaffna": [9.6615, 80.0255],
+    "Kilinochchi": [9.3803, 80.3992],
+    "Mannar": [8.9810, 79.9044],
+    "Vavuniya": [8.7542, 80.4982],
+    "Mullaitivu": [9.2671, 80.8143],
+    "Batticaloa": [7.7170, 81.7010],
+    "Ampara": [7.2843, 81.6747],
+    "Trincomalee": [8.5717, 81.2333],
+    "Kurunegala": [7.4863, 80.3647],
+    "Puttalam": [8.0330, 79.8300],
+    "Anuradhapura": [8.3114, 80.4037],
+    "Polonnaruwa": [7.9397, 81.0036],
+    "Badulla": [6.9934, 81.0550],
+    "Moneragala": [6.8916, 81.3500],
+    "Ratnapura": [6.7056, 80.3847],
+    "Kegalle": [7.2513, 80.3464]
+};
+
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
+    const { getToken } = useAuth();
     const [activeSection, setActiveSection] = useState('overview');
+
+    // Helper for Authenticated Requests
+    const authenticatedFetch = async (url: string, options: RequestInit = {}) => {
+        try {
+            const token = await getToken();
+            const headers = {
+                ...(options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+                ...options.headers,
+            };
+            return fetch(url, { ...options, headers });
+        } catch (error) {
+            console.error("Auth Token Error", error);
+            throw error;
+        }
+    };
 
     // Medicine Management State
     const [medicines, setMedicines] = useState<Medicine[]>([]);
@@ -57,10 +135,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
 
     const [reports, setReports] = useState<Report[]>([]);
     const [selectedReport, setSelectedReport] = useState<Report | null>(null);
-    const [messages, setMessages] = useState<any[]>([]);
+    const [messages, setMessages] = useState<ContactMessage[]>([]);
     const [adminChatMsg, setAdminChatMsg] = useState('');
+    const [replyingToId, setReplyingToId] = useState<string | null>(null);
+    const [replyDraft, setReplyDraft] = useState('');
+    const [showBlockedInquiries, setShowBlockedInquiries] = useState(false);
 
     const [users, setUsers] = useState<User[]>([]);
+    const [aiInsight, setAiInsight] = useState('');
+    const [loadingAI, setLoadingAI] = useState(false);
 
     // Medicine Form State
     const [showAddModal, setShowAddModal] = useState(false);
@@ -78,11 +161,26 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
     const [editingMedicineId, setEditingMedicineId] = useState<string | null>(null);
 
     useEffect(() => {
+        // ALWAYS fetch reports and messages for counts in Overview
+        fetchReports();
+        fetchContactMessages();
+        fetchMedicines(); // To get count for overview too
+
         if (activeSection === 'medicines') fetchMedicines();
-        if (activeSection === 'inquiries' || activeSection === 'analytics') fetchReports();
-        if (activeSection === 'messages') fetchContactMessages();
         if (activeSection === 'users') fetchUsers();
+        if (activeSection === 'analytics') fetchAIAnalytics();
     }, [activeSection, page, searchQuery]); // Re-fetch on page or search change
+
+    const fetchAIAnalytics = async () => {
+        if (aiInsight) return; // Only fetch once per session or manually
+        setLoadingAI(true);
+        try {
+            const res = await authenticatedFetch(`${API_BASE_URL}/admin/ai-analytics`);
+            const data = await res.json();
+            if (data.insight) setAiInsight(data.insight);
+        } catch (error) { console.error("AI Analytics failed"); }
+        finally { setLoadingAI(false); }
+    };
 
     const fetchMedicines = async () => {
         try {
@@ -91,7 +189,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                 limit: '10',
                 search: searchQuery
             });
-            const res = await fetch(`${API_BASE_URL}/admin/all-medicines?${query}`);
+            const res = await authenticatedFetch(`${API_BASE_URL}/admin/all-medicines?${query}`);
+            if (!res.ok) throw new Error("Failed to fetch medicines");
+
             const data = await res.json();
 
             // Handle new paginated response
@@ -108,23 +208,26 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
 
     const fetchReports = async () => {
         try {
-            const res = await fetch(`${API_BASE_URL}/reports/all?role=ADMIN`);
+            const res = await authenticatedFetch(`${API_BASE_URL}/reports/all?role=ADMIN`);
+            if (!res.ok) throw new Error("Failed to fetch reports");
             const data = await res.json();
-            setReports(data);
+            setReports(Array.isArray(data) ? data : []);
         } catch (error) { console.error("Fetch reports failed"); }
     };
 
     const fetchContactMessages = async () => {
         try {
-            const res = await fetch(`${API_BASE_URL}/contact`);
+            const res = await authenticatedFetch(`${API_BASE_URL}/contact`);
+            if (!res.ok) throw new Error("Failed to fetch messages");
             const data = await res.json();
-            setMessages(data);
+            setMessages(Array.isArray(data) ? data : []);
         } catch (error) { console.error("Fetch messages failed"); }
     };
 
     const fetchUsers = async () => {
         try {
-            const res = await fetch(`${API_BASE_URL}/users/all`);
+            const res = await authenticatedFetch(`${API_BASE_URL}/users/all`);
+            if (!res.ok) throw new Error("Failed to fetch users");
             const data = await res.json();
             setUsers(data.users || []);
         } catch (error) { console.error("Fetch users failed"); }
@@ -133,7 +236,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
     const toggleBanUser = async (id: string, currentStatus: boolean) => {
         if (!confirm(`Are you sure you want to ${currentStatus ? 'UNBAN' : 'BAN'} this user?`)) return;
         try {
-            await fetch(`${API_BASE_URL}/users/${id}/ban`, { method: 'PATCH' });
+            await authenticatedFetch(`${API_BASE_URL}/users/${id}/ban`, { method: 'PATCH' });
             fetchUsers();
         } catch (err) { alert("Action failed"); }
     };
@@ -147,7 +250,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
 
             const method = editingMedicineId ? 'PUT' : 'POST';
 
-            const res = await fetch(url, {
+            const res = await authenticatedFetch(url, {
                 method: method,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData)
@@ -185,7 +288,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
     const handleDelete = async (id: string) => {
         if (!confirm("Delete this?")) return;
         try {
-            await fetch(`${API_BASE_URL}/admin/delete-medicine/${id}`, { method: 'DELETE' });
+            await authenticatedFetch(`${API_BASE_URL}/admin/delete-medicine/${id}`, { method: 'DELETE' });
             fetchMedicines();
         } catch (error) { alert("Delete failed"); }
     };
@@ -199,7 +302,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
             setSelectedReport(updated);
             setAdminChatMsg('');
 
-            await fetch(`${API_BASE_URL}/reports/${selectedReport._id}/message`, {
+            await authenticatedFetch(`${API_BASE_URL}/reports/${selectedReport._id}/message`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ sender: 'ADMIN', text: newMsg.text })
@@ -210,7 +313,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
     const updateReportStatus = async (status: string) => {
         if (!selectedReport) return;
         try {
-            const res = await fetch(`${API_BASE_URL}/reports/${selectedReport._id}/status`, {
+            const res = await authenticatedFetch(`${API_BASE_URL}/reports/${selectedReport._id}/status`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status })
@@ -221,6 +324,105 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
             }
         } catch (err) { console.error("Status update failed"); }
     };
+
+    const handleReplyInquiry = async (id: string) => {
+        if (!replyDraft.trim()) return;
+        try {
+            await authenticatedFetch(`${API_BASE_URL}/contact/${id}/reply`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ adminReply: replyDraft })
+            });
+            setReplyingToId(null);
+            setReplyDraft('');
+            fetchContactMessages();
+        } catch (err) { alert("Reply failed"); }
+    };
+
+    const handleToggleBlockInquiry = async (id: string, currentStatus: boolean) => {
+        if (!confirm(`Are you sure you want to ${currentStatus ? 'Unblock' : 'Block'} this inquiry?`)) return;
+        try {
+            await authenticatedFetch(`${API_BASE_URL}/contact/${id}/block`, { method: 'PATCH' });
+            fetchContactMessages();
+        } catch (err) { alert("Block failed"); }
+    };
+
+    const exportToCSV = () => {
+        const headers = ["Pharmacy", "Medicine", "Price", "Status", "Date", "District"];
+        const rows = reports.map(r => [
+            r.pharmacyName,
+            r.medicineName,
+            r.pricePaid,
+            r.status,
+            new Date(r.date).toLocaleDateString(),
+            r.district || "N/A"
+        ]);
+
+        const csvContent = "data:text/csv;charset=utf-8,"
+            + headers.join(",") + "\n"
+            + rows.map(e => e.join(",")).join("\n");
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "price_reports.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    const exportToPDF = () => {
+        const doc = new jsPDF();
+        doc.text("MediGuide AI - Price Reports", 14, 20);
+        autoTable(doc, {
+            startY: 30,
+            head: [['Pharmacy', 'Medicine', 'Price', 'Status', 'Date', 'District']],
+            body: reports.map(r => [
+                r.pharmacyName,
+                r.medicineName,
+                r.pricePaid,
+                r.status,
+                new Date(r.date).toLocaleDateString(),
+                r.district || "N/A"
+            ]),
+        });
+        doc.save('price_reports.pdf');
+    };
+
+    const handleBulkUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const res = await authenticatedFetch(`${API_BASE_URL}/admin/bulk-upload`, {
+                method: 'POST',
+                body: formData
+            });
+            const data = await res.json();
+            if (res.ok) {
+                alert(data.message);
+                fetchMedicines();
+            } else {
+                alert("Upload failed: " + (data.error || "Unknown error"));
+            }
+        } catch (error) {
+            alert("Bulk upload failed");
+        }
+    };
+
+    const [filterDistrict, setFilterDistrict] = useState('All');
+    const [filterStatus, setFilterStatus] = useState('All');
+
+    const filteredReports = reports.filter(r => {
+        const matchesDistrict = filterDistrict === 'All' || (r.district && r.district === filterDistrict);
+        const matchesStatus = filterStatus === 'All' || r.status === filterStatus;
+        return matchesDistrict && matchesStatus;
+    });
+
+    const uniqueDistricts = Array.from(new Set(reports.map(r => r.district).filter(Boolean)));
 
     return (
         <div className="w-full min-h-screen bg-gray-900 text-white font-sans relative overflow-hidden">
@@ -267,7 +469,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                             </div>
                             <div className="bg-white/5 p-6 rounded-2xl border border-white/10">
                                 <h3 className="text-gray-400">Unread Messages</h3>
-                                <p className="text-4xl font-bold text-teal-400">{messages.filter(m => m.status === 'Unread').length}</p>
+                                <p className="text-4xl font-bold text-teal-400">{Array.isArray(messages) ? messages.filter(m => m.status === 'Unread').length : 0}</p>
                             </div>
                         </div>
                     )}
@@ -293,6 +495,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                                         />
                                         <CheckCircle className="w-4 h-4 absolute left-3 top-3 text-gray-500" />
                                     </div>
+
+                                    <label className="bg-gradient-to-r from-green-500 to-emerald-600 px-6 py-2 rounded-lg font-bold hover:shadow-lg whitespace-nowrap cursor-pointer flex items-center gap-2">
+                                        📄 Bulk Upload
+                                        <input type="file" className="hidden" accept=".xlsx, .xls" onChange={handleBulkUpload} />
+                                    </label>
+
                                     <button onClick={() => {
                                         setEditingMedicineId(null);
                                         setFormData({
@@ -366,8 +574,28 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[700px]">
                             {/* List */}
                             <div className="col-span-1 bg-white/5 rounded-2xl p-4 overflow-y-auto border border-white/10">
-                                <h2 className="text-xl font-bold mb-4">Price Reports</h2>
-                                {reports.map(rep => (
+                                <div className="flex justify-between items-center mb-4">
+                                    <h2 className="text-xl font-bold">Price Reports</h2>
+                                    <div className="flex gap-2">
+                                        <button onClick={exportToCSV} className="text-xs font-bold bg-green-600 px-3 py-1.5 rounded hover:bg-green-700 transition-colors">CSV</button>
+                                        <button onClick={exportToPDF} className="text-xs font-bold bg-red-600 px-3 py-1.5 rounded hover:bg-red-700 transition-colors">PDF</button>
+                                    </div>
+                                </div>
+
+                                <div className="flex gap-2 mb-4">
+                                    <select className="bg-black/30 text-xs rounded-lg p-2 border border-white/10 outline-none" value={filterDistrict} onChange={e => setFilterDistrict(e.target.value)}>
+                                        <option value="All">All Districts</option>
+                                        {uniqueDistricts.map(d => <option key={d} value={d}>{d}</option>)}
+                                    </select>
+                                    <select className="bg-black/30 text-xs rounded-lg p-2 border border-white/10 outline-none" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+                                        <option value="All">All Status</option>
+                                        <option value="Pending">Pending</option>
+                                        <option value="Resolved">Resolved</option>
+                                        <option value="Rejected">Rejected</option>
+                                    </select>
+                                </div>
+
+                                {filteredReports.map(rep => (
                                     <div key={rep._id} onClick={() => setSelectedReport(rep)}
                                         className={`p-4 rounded-xl mb-2 cursor-pointer transition-all ${selectedReport?._id === rep._id ? 'bg-teal-500/20 border border-teal-500/50' : 'bg-white/5 hover:bg-white/10'}`}>
                                         <div className="flex justify-between">
@@ -432,9 +660,26 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                     {/* MESSAGES (NEW) */}
                     {activeSection === 'messages' && (
                         <div className="space-y-6">
-                            <h2 className="text-3xl font-bold text-white mb-6">General Messages</h2>
+                            <div className="flex justify-between items-center mb-6">
+                                <h2 className="text-3xl font-bold text-white">General Inquiries</h2>
+                                <div className="flex bg-white/5 rounded-xl p-1 border border-white/10">
+                                    <button
+                                        onClick={() => setShowBlockedInquiries(false)}
+                                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${!showBlockedInquiries ? 'bg-teal-500 text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
+                                    >
+                                        Active
+                                    </button>
+                                    <button
+                                        onClick={() => setShowBlockedInquiries(true)}
+                                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${showBlockedInquiries ? 'bg-red-500 text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
+                                    >
+                                        Blocked List
+                                    </button>
+                                </div>
+                            </div>
+
                             <div className="grid gap-4">
-                                {messages.map(msg => (
+                                {messages.filter(m => !!m.isBlocked === showBlockedInquiries).map(msg => (
                                     <div key={msg._id} className="bg-white/5 p-6 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors">
                                         <div className="flex justify-between items-start mb-4">
                                             <div>
@@ -442,39 +687,89 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                                                 <p className="text-sm text-gray-400">From: {msg.name} ({msg.email})</p>
                                             </div>
                                             <div className="flex flex-col items-end gap-2">
-                                                <span className={`px-3 py-1 rounded-full text-xs font-bold ${msg.status === 'Unread' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-green-500/20 text-green-400'}`}>
+                                                <span className={`px-3 py-1 rounded-full text-xs font-bold ${msg.status === 'Unread' ? 'bg-yellow-500/20 text-yellow-400' : (msg.status === 'Replied' ? 'bg-teal-500/20 text-teal-400' : 'bg-green-500/20 text-green-400')}`}>
                                                     {msg.status}
                                                 </span>
                                                 <span className="text-xs text-gray-500">{new Date(msg.createdAt).toLocaleDateString()}</span>
                                             </div>
                                         </div>
                                         <p className="text-gray-300 leading-relaxed bg-black/20 p-4 rounded-xl">{msg.message}</p>
-                                        <div className="mt-4 flex gap-2">
-                                            <a href={`mailto:${msg.email}`} className="px-4 py-2 bg-teal-500/20 text-teal-400 rounded-lg text-sm font-bold hover:bg-teal-500/30 transition-colors">
-                                                Reply via Email
-                                            </a>
-                                            {msg.status === 'Unread' && (
-                                                <button
-                                                    onClick={async () => {
-                                                        await fetch(`${API_BASE_URL}/contact/${msg._id}/status`, {
-                                                            method: 'PATCH',
-                                                            headers: { 'Content-Type': 'application/json' },
-                                                            body: JSON.stringify({ status: 'Read' })
-                                                        });
-                                                        fetchContactMessages();
-                                                    }}
-                                                    className="px-4 py-2 bg-white/5 text-gray-400 rounded-lg text-sm font-bold hover:bg-white/10 transition-colors"
-                                                >
-                                                    Mark as Read
-                                                </button>
+
+                                        {msg.adminReply && (
+                                            <div className="mt-4 ml-8 p-4 bg-teal-500/10 border-l-4 border-teal-500 rounded-lg">
+                                                <h4 className="text-xs font-bold text-teal-400 uppercase mb-2">Admin Reply</h4>
+                                                <p className="text-sm text-gray-300 italic">{msg.adminReply}</p>
+                                            </div>
+                                        )}
+
+                                        <div className="mt-4 flex flex-wrap gap-2">
+                                            {replyingToId === msg._id ? (
+                                                <div className="w-full space-y-2 animate-fade-in">
+                                                    <textarea
+                                                        className="w-full bg-black/40 border border-teal-500/30 rounded-xl p-4 text-sm text-white outline-none focus:border-teal-500"
+                                                        placeholder="Write your professional reply..."
+                                                        rows={3}
+                                                        value={replyDraft}
+                                                        onChange={e => setReplyDraft(e.target.value)}
+                                                    />
+                                                    <div className="flex gap-2">
+                                                        <button onClick={() => handleReplyInquiry(msg._id)} className="px-4 py-2 bg-teal-500 text-white rounded-lg text-xs font-bold hover:bg-teal-600 transition-all">SEND REPLY</button>
+                                                        <button onClick={() => { setReplyingToId(null); setReplyDraft(''); }} className="px-4 py-2 bg-white/5 text-gray-400 rounded-lg text-xs font-bold hover:bg-white/10">CANCEL</button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    <button onClick={() => { setReplyingToId(msg._id); setReplyDraft(msg.adminReply || ''); }} className="px-4 py-2 bg-teal-500/20 text-teal-400 rounded-lg text-sm font-bold hover:bg-teal-500/30 transition-colors">
+                                                        {msg.adminReply ? 'Edit Reply' : 'Quick Reply'}
+                                                    </button>
+                                                    <a href={`mailto:${msg.email}`} className="px-4 py-2 bg-blue-500/20 text-blue-400 rounded-lg text-sm font-bold hover:bg-blue-500/30 transition-colors">
+                                                        Mailto
+                                                    </a>
+                                                    {msg.status === 'Unread' && (
+                                                        <button
+                                                            onClick={async () => {
+                                                                await authenticatedFetch(`${API_BASE_URL}/contact/${msg._id}/status`, {
+                                                                    method: 'PATCH',
+                                                                    headers: { 'Content-Type': 'application/json' },
+                                                                    body: JSON.stringify({ status: 'Read' })
+                                                                });
+                                                                fetchContactMessages();
+                                                            }}
+                                                            className="px-4 py-2 bg-white/5 text-gray-400 rounded-lg text-sm font-bold hover:bg-white/10 transition-colors"
+                                                        >
+                                                            Mark Read
+                                                        </button>
+                                                    )}
+                                                    <button
+                                                        onClick={() => handleToggleBlockInquiry(msg._id, !!msg.isBlocked)}
+                                                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${msg.isBlocked ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400 hover:bg-red-500/30'}`}
+                                                    >
+                                                        {msg.isBlocked ? 'Unblock' : 'Block / Spam'}
+                                                    </button>
+                                                    <button
+                                                        onClick={async () => {
+                                                            const userRes = await authenticatedFetch(`${API_BASE_URL}/users/all?limit=1000`);
+                                                            const userData = await userRes.json();
+                                                            const targetUser = userData.users?.find((u: any) => u.email === msg.email);
+                                                            if (targetUser) {
+                                                                toggleBanUser(targetUser._id, targetUser.isBanned);
+                                                            } else {
+                                                                alert("User account not found in database (Legacy or External user).");
+                                                            }
+                                                        }}
+                                                        className="px-4 py-2 bg-purple-500/10 text-purple-400 rounded-lg text-sm font-bold hover:bg-purple-500/20"
+                                                    >
+                                                        Ban Account
+                                                    </button>
+                                                </>
                                             )}
                                         </div>
                                     </div>
                                 ))}
-                                {messages.length === 0 && (
+                                {messages.filter(m => !!m.isBlocked === showBlockedInquiries).length === 0 && (
                                     <div className="text-center py-20 text-gray-500">
                                         <MessageSquare className="w-16 h-16 mx-auto mb-4 opacity-20" />
-                                        <p>No messages found</p>
+                                        <p>No {showBlockedInquiries ? 'blocked' : 'active'} inquiries found</p>
                                     </div>
                                 )}
                             </div>
@@ -538,6 +833,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                                     <h3 className="text-gray-400 text-sm">Total Inquiries</h3>
                                     <p className="text-4xl font-bold">{reports.length}</p>
                                 </div>
+                                <div className="bg-white/5 p-6 rounded-2xl border border-white/10 flex flex-col justify-center relative overflow-hidden group">
+                                    <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-20 transition-opacity">
+                                        <div className="w-12 h-12 bg-teal-400 rounded-full blur-xl"></div>
+                                    </div>
+                                    <h3 className="text-teal-400 text-xs font-bold uppercase tracking-widest mb-1">AI Agent Status</h3>
+                                    <p className="text-xl font-black text-white">Active & Monitoring</p>
+                                </div>
                                 <div className="bg-white/5 p-6 rounded-2xl border border-white/10">
                                     <h3 className="text-gray-400 text-sm">Most Reported Area</h3>
                                     <p className="text-xl font-bold text-yellow-400 truncate">
@@ -546,6 +848,36 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                                             return acc;
                                         }, {} as any)).sort((a: any, b: any) => b[1] - a[1])[0]?.[0] || "N/A"}
                                     </p>
+                                </div>
+                                <div className="bg-white/5 p-6 rounded-2xl border border-white/10">
+                                    <h3 className="text-gray-400 text-sm">Targeted Medicine</h3>
+                                    <p className="text-xl font-bold text-red-500 truncate">
+                                        {Object.entries(reports.reduce((acc, curr) => {
+                                            acc[curr.medicineName] = (acc[curr.medicineName] || 0) + 1;
+                                            return acc;
+                                        }, {} as any)).sort((a: any, b: any) => b[1] - a[1])[0]?.[0] || "N/A"}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* AI INSIGHT WIDGET */}
+                            <div className="bg-gradient-to-br from-teal-900/40 to-blue-900/40 p-1 rounded-3xl border border-teal-500/30 shadow-2xl shadow-teal-500/10">
+                                <div className="bg-gray-900/90 backdrop-blur-3xl rounded-[1.4rem] p-8">
+                                    <div className="flex items-center gap-4 mb-6">
+                                        <div className="w-12 h-12 bg-teal-500/20 rounded-2xl flex items-center justify-center text-2xl animate-pulse">
+                                            🧠
+                                        </div>
+                                        <div>
+                                            <h3 className="text-xl font-black text-white">AI Strategy Insight</h3>
+                                            <p className="text-teal-400 text-xs font-bold uppercase tracking-tighter">Generated by Gemini 1.5 Flash</p>
+                                        </div>
+                                        {loadingAI && <div className="ml-auto w-5 h-5 border-2 border-teal-500 border-t-transparent rounded-full animate-spin"></div>}
+                                    </div>
+                                    <div className="min-h-[60px] text-gray-200 leading-relaxed italic text-lg relative">
+                                        <span className="text-4xl text-teal-500/20 absolute -top-4 -left-4 font-serif">"</span>
+                                        {aiInsight || (loadingAI ? 'Scanning national reports for patterns...' : 'Monitoring platform data for anomalies.')}
+                                        <span className="text-4xl text-teal-500/20 absolute -bottom-6 -right-4 font-serif">"</span>
+                                    </div>
                                 </div>
                             </div>
 
@@ -601,6 +933,49 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                                             </div>
                                         ))}
                                         {reports.length === 0 && <p className="text-gray-500">No data available yet.</p>}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* NATIONAL HEAT DISPATCH MAP */}
+                            <div className="bg-black/30 p-6 rounded-2xl border border-white/10">
+                                <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
+                                    🌍 National Report Hotspots <span className="text-xs font-normal text-gray-500">(Real-time Visual)</span>
+                                </h3>
+                                <div className="h-[500px] rounded-xl overflow-hidden border border-white/10 relative">
+                                    <MapContainer
+                                        center={[7.8731, 80.7718]}
+                                        zoom={7.5}
+                                        style={{ height: '100%', width: '100%', background: '#111' }}
+                                        scrollWheelZoom={false}
+                                    >
+                                        <TileLayer
+                                            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                                        />
+                                        {reports.filter(r => r.district && DISTRICT_COORDS[r.district]).map((report, idx) => (
+                                            <CircleMarker
+                                                key={report._id || idx}
+                                                center={DISTRICT_COORDS[report.district!]}
+                                                pathOptions={{ color: 'red', fillColor: 'red', fillOpacity: 0.6 }}
+                                                radius={8}
+                                            >
+                                                <Popup>
+                                                    <div className="text-black">
+                                                        <p className="font-bold">{report.medicineName}</p>
+                                                        <p className="text-xs">{report.pharmacyName}</p>
+                                                        <p className="text-xs font-bold text-red-600">Price: LKR {report.pricePaid}</p>
+                                                    </div>
+                                                </Popup>
+                                            </CircleMarker>
+                                        ))}
+                                    </MapContainer>
+                                    <div className="absolute bottom-4 right-4 z-[1000] bg-black/60 backdrop-blur-md p-3 rounded-lg border border-white/10 text-[10px] text-gray-400">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+                                            <span>Violation Hotspot</span>
+                                        </div>
+                                        <p>Click dots for details</p>
                                     </div>
                                 </div>
                             </div>

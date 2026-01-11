@@ -27,6 +27,14 @@ const contactMessageSchema = new mongoose.Schema({
         enum: ['Unread', 'Read', 'Replied'],
         default: 'Unread'
     },
+    adminReply: {
+        type: String,
+        default: ""
+    },
+    isBlocked: {
+        type: Boolean,
+        default: false
+    },
     createdAt: {
         type: Date,
         default: Date.now

@@ -27,6 +27,7 @@ export interface AppNotification {
 }
 
 export interface MedicineInfo {
+  _id?: string;
   medicineName: string;
   description: string;
   uses: string;
@@ -88,6 +89,6 @@ export interface UserInquiry {
 
 export type UserRole = 'USER' | 'ADMIN' | null;
 
-export type Tab = 'home' | 'search' | 'reports' | 'profile' | 'sos' | 'services' | 'about' | 'contact';
+export type Tab = 'home' | 'search' | 'reports' | 'profile' | 'sos' | 'services' | 'about' | 'contact' | 'faq';
 export type AdminTab = 'dashboard' | 'analytics';
 export type AuthView = 'landing' | 'login' | 'signup' | 'app';

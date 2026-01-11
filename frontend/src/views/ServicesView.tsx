@@ -10,20 +10,20 @@ interface ServiceCardProps {
 }
 
 const ServiceCard: React.FC<ServiceCardProps> = ({ icon: Icon, title, desc }) => (
-    <div className="p-10 glass-card bg-white/5 backdrop-blur-2xl border-white/10 rounded-[2.5rem] hover:scale-105 hover:bg-white/10 transition-all duration-500 group">
-        <div className="w-16 h-16 bg-blue-500/20 rounded-2xl flex items-center justify-center mb-8 text-blue-400 group-hover:bg-blue-500 group-hover:text-white transition-all duration-300 shadow-xl shadow-blue-500/10">
+    <div className="p-10 glass-card bg-white shadow-2xl dark:shadow-none dark:bg-white/5 backdrop-blur-2xl border border-slate-200 dark:border-white/10 rounded-[2.5rem] hover:scale-105 transition-all duration-500 group">
+        <div className="w-16 h-16 bg-blue-100 dark:bg-blue-500/20 rounded-2xl flex items-center justify-center mb-8 text-blue-600 dark:text-blue-400 group-hover:bg-blue-500 group-hover:text-white transition-all duration-300 shadow-xl shadow-blue-500/10">
             <Icon size={32} />
         </div>
-        <h3 className="text-2xl font-black text-white mb-4 tracking-tight">{title}</h3>
-        <p className="text-slate-400 font-medium text-base leading-relaxed">{desc}</p>
+        <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-4 tracking-tight transition-colors">{title}</h3>
+        <p className="text-slate-600 dark:text-slate-400 font-medium text-base leading-relaxed transition-colors">{desc}</p>
     </div>
 );
 
 const ServicesView = () => {
     return (
-        <div className="relative bg-slate-900 py-32 px-6 overflow-hidden w-full min-h-screen">
+        <div className="relative bg-white dark:bg-slate-900 py-32 px-6 overflow-hidden w-full min-h-screen transition-colors duration-300">
             {/* Next-Gen Three.js Background */}
-            <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute inset-0 pointer-events-none opacity-30 dark:opacity-100 transition-opacity duration-300">
                 <Canvas camera={{ position: [0, 0, 10] }}>
                     <ambientLight intensity={0.5} />
                     <pointLight position={[10, 10, 10]} />
@@ -47,10 +47,10 @@ const ServicesView = () => {
 
             <div className="max-w-6xl mx-auto relative z-10">
                 <div className="text-center mb-20 space-y-6">
-                    <h2 className="text-6xl md:text-7xl font-black text-white tracking-tighter leading-none">
-                        Premium <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-teal-400">Healthcare Services</span>
+                    <h2 className="text-6xl md:text-7xl font-black text-slate-900 dark:text-white tracking-tighter leading-none transition-colors duration-300">
+                        Premium <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-teal-500 dark:from-blue-500 dark:to-teal-400">Healthcare Services</span>
                     </h2>
-                    <p className="text-xl text-slate-400 font-bold max-w-2xl mx-auto leading-relaxed">
+                    <p className="text-xl text-slate-600 dark:text-slate-400 font-bold max-w-2xl mx-auto leading-relaxed transition-colors duration-300">
                         Cutting-edge medical intelligence and transparency tools designed for every citizen in Sri Lanka.
                     </p>
                 </div>

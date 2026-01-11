@@ -66,13 +66,17 @@ const Header: React.FC<HeaderProps> = ({
                         <nav className="hidden md:flex items-center gap-1">
                             {[
                                 { id: 'home', icon: Home, label: isSinhala ? 'මුල් පිටුව' : 'Home', public: true },
-                                { id: 'services', icon: Layout, label: isSinhala ? 'සේවා' : 'Services', public: true },
                                 { id: 'search', icon: Search, label: isSinhala ? 'සෙවුම' : 'Search', public: false },
-                                { id: 'sos', icon: AlertTriangle, label: 'SOS', color: 'text-red-600', public: false },
-                                { id: 'about', icon: Info, label: isSinhala ? 'අප ගැන' : 'About', public: true },
-                                { id: 'contact', icon: MessageSquare, label: isSinhala ? 'සම්බන්ධ වන්න' : 'Contact', public: true },
                                 { id: 'reports', icon: FileText, label: isSinhala ? 'වාර්තා' : 'Reports', public: false },
-                            ].filter(t => t.public || (view === 'app' && role === 'USER')).map(t => (
+                                { id: 'services', icon: Layout, label: isSinhala ? 'සේවා' : 'Services', public: true },
+                                { id: 'about', icon: Info, label: isSinhala ? 'අප ගැන' : 'About', public: true },
+                                { id: 'faq', icon: HelpCircle, label: isSinhala ? 'ප්‍රශ්න' : 'FAQ', public: true },
+                                { id: 'contact', icon: MessageSquare, label: isSinhala ? 'සම්බන්ධ වන්න' : 'Contact', public: true },
+                                { id: 'sos', icon: AlertTriangle, label: 'SOS', color: 'text-red-600', public: false },
+                            ].filter(t => {
+                                if (t.id === 'faq' && view === 'app') return false;
+                                return t.public || (view === 'app' && role === 'USER');
+                            }).map(t => (
                                 <button
                                     key={t.id}
                                     onClick={() => {

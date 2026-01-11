@@ -72,3 +72,75 @@ exports.updateMessageStatus = async (req, res) => {
         });
     }
 };
+
+// Reply to a message
+exports.replyToMessage = async (req, res) => {
+    try {
+        const { adminReply } = req.body;
+        const message = await ContactMessage.findByIdAndUpdate(
+            req.params.id,
+            { adminReply, status: 'Replied' },
+            { new: true }
+        );
+
+        if (!message) {
+            return res.status(404).json({ success: false, message: 'Message not found' });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: 'Reply saved successfully',
+            data: message
+        });
+    } catch (error) {
+        console.error('Reply Message Error:', error);
+        res.status(500).json({ success: false, message: 'Failed to save reply' });
+    }
+};
+
+// Toggle block status of a message
+exports.toggleBlockMessage = async (req, res) => {
+    try {
+        const message = await ContactMessage.findById(req.params.id);
+        if (!message) {
+            return res.status(404).json({ success: false, message: 'Message not found' });
+        }
+
+        message.isBlocked = !message.isBlocked;
+        await message.save();
+
+        res.status(200).json({
+            success: true,
+            message: message.isBlocked ? 'Message blocked' : 'Message unblocked',
+            data: message
+        });
+    } catch (error) {
+        console.error('Block Message Error:', error);
+        res.status(500).json({ success: false, message: 'Failed to toggle block status' });
+    }
+};
+const User = require('../models/User');
+
+// Get messages for the current user
+exports.getUserMessages = async (req, res) => {
+    try {
+        const { userId } = req.auth;
+        const user = await User.findOne({ clerkId: userId });
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        const messages = await ContactMessage.find({ email: user.email }).sort({ createdAt: -1 });
+        res.status(200).json(messages);
+    } catch (error) {
+        console.error('Get User Messages Error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch messages',
+            error: error.message
+        });
+    }
+};
+
+module.exports = exports;

@@ -7,7 +7,7 @@ import { Float, Sphere, MeshDistortMaterial } from '@react-three/drei';
 const ContactCard = ({ icon: Icon, title, detail, subDetail, color }: any) => (
     <motion.div
         whileHover={{ y: -5, scale: 1.02 }}
-        className="glass-card p-10 rounded-[2.5rem] border-white/10 flex flex-col items-center text-center transition-all hover:bg-white/10 group shadow-2xl"
+        className="glass-card p-10 rounded-[2.5rem] bg-white shadow-2xl dark:shadow-none dark:bg-white/5 border border-slate-200 dark:border-white/10 flex flex-col items-center text-center transition-all group"
     >
         <div className={`w-16 h-16 ${color} rounded-2xl flex items-center justify-center mb-6 text-white shadow-xl shadow-current/20 group-hover:scale-110 transition-transform`}>
             <Icon size={32} />
@@ -54,7 +54,7 @@ const ContactView = () => {
     };
 
     return (
-        <div className="relative bg-slate-50 dark:bg-slate-950 py-32 px-6 w-full overflow-hidden min-h-screen">
+        <div className="relative bg-white dark:bg-slate-900 py-32 px-6 w-full overflow-hidden min-h-screen transition-colors duration-300">
 
             {/* Three.js Background Layer */}
             <div className="absolute inset-0 z-0 opacity-20 pointer-events-none">
@@ -85,11 +85,11 @@ const ContactView = () => {
                     <span className="inline-flex items-center gap-2 px-6 py-2 rounded-full bg-teal-500/10 border border-teal-500/20 text-teal-600 font-black text-xs uppercase tracking-[0.3em]">
                         <HeartPulse className="w-4 h-4" /> Transparency Matters
                     </span>
-                    <h1 className="text-6xl md:text-8xl font-black text-slate-900 dark:text-white leading-none tracking-tighter">
+                    <h1 className="text-6xl md:text-8xl font-black text-slate-900 dark:text-white leading-none tracking-tighter transition-colors duration-300">
                         Get in Touch with <br />
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-500 to-blue-600">MediGuide AI</span>
                     </h1>
-                    <p className="text-xl md:text-2xl text-slate-500 dark:text-slate-400 font-bold max-w-3xl mx-auto leading-relaxed">
+                    <p className="text-xl md:text-2xl text-slate-500 dark:text-slate-400 font-bold max-w-3xl mx-auto leading-relaxed transition-colors duration-300">
                         Have concerns about medicine prices? Our team and official regulatory bodies are here to help you.
                     </p>
                 </motion.div>

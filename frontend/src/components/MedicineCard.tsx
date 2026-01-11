@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '@clerk/clerk-react';
+import { API_BASE_URL } from '../config/apiConfig';
 import { MedicineInfo, Language } from '../models/types';
 import {
    Info, ClipboardList, ShieldCheck, Volume2, StopCircle, Copy, Check,
-   Pill, Activity, Zap, AlertTriangle
+   Pill, Activity, Zap, AlertTriangle, Heart
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -17,6 +19,63 @@ const MedicineCard: React.FC<MedicineCardProps> = ({ info, language }) => {
    const [isSpeaking, setIsSpeaking] = useState(false);
    const [copied, setCopied] = useState(false);
    const isSinhala = language === Language.Sinhala;
+
+   const { getToken } = useAuth();
+   const [isSaved, setIsSaved] = useState(false);
+   const [isSaving, setIsSaving] = useState(false);
+
+   // Check if saved on mount
+   useEffect(() => {
+      const checkSavedStatus = async () => {
+         if (!info._id) return;
+         try {
+            const token = await getToken();
+            if (!token) return;
+            const res = await fetch(`${API_BASE_URL}/users/saved`, {
+               headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+               const savedList = await res.json();
+               // savedList is array of objects if populated, or strings if not.
+               // My controller returns populated. So we check _id.
+               const isInList = savedList.some((m: any) => m._id === info._id || m === info._id);
+               setIsSaved(isInList);
+            }
+         } catch (e) { console.error(e); }
+      };
+      checkSavedStatus();
+   }, [info._id, getToken]);
+
+   const handleToggleSave = async (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (!info._id) return;
+      setIsSaving(true);
+      try {
+         const token = await getToken();
+         if (!token) {
+            alert("Please sign in to save medicines.");
+            return;
+         }
+         const res = await fetch(`${API_BASE_URL}/users/saved`, {
+            method: 'POST',
+            headers: {
+               'Content-Type': 'application/json',
+               'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ medicineId: info._id })
+         });
+
+         if (res.ok) {
+            const data = await res.json();
+            setIsSaved(data.isSaved);
+         }
+      } catch (error) {
+         console.error("Failed to toggle save", error);
+      } finally {
+         setIsSaving(false);
+      }
+   };
+
 
    const handleSpeak = (e: React.MouseEvent) => {
       e.stopPropagation();
@@ -93,6 +152,18 @@ const MedicineCard: React.FC<MedicineCardProps> = ({ info, language }) => {
 
                   <div className="flex items-center gap-2 pl-6 md:border-l md:border-slate-100">
                      {/* Action Buttons */}
+                     {/* Save Button */}
+                     {info._id && (
+                        <button
+                           onClick={handleToggleSave}
+                           disabled={isSaving}
+                           className={`p-2.5 rounded-lg transition-all border ${isSaved ? 'bg-rose-50 text-rose-500 border-rose-200' : 'bg-white text-slate-400 border-slate-200 hover:border-slate-300 hover:text-rose-500'}`}
+                           title={isSaved ? "Unsave" : "Save"}
+                        >
+                           <Heart size={18} fill={isSaved ? "currentColor" : "none"} className={isSaving ? "animate-pulse" : ""} />
+                        </button>
+                     )}
+
                      <button
                         onClick={handleSpeak}
                         className={`p-2.5 rounded-lg transition-all border ${isSpeaking ? 'bg-indigo-50 text-indigo-600 border-indigo-200' : 'bg-white text-slate-400 border-slate-200 hover:border-slate-300 hover:text-slate-600'}`}
@@ -129,8 +200,8 @@ const MedicineCard: React.FC<MedicineCardProps> = ({ info, language }) => {
                            key={tab.id}
                            onClick={() => setActiveTab(tab.id as any)}
                            className={`relative px-5 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${activeTab === tab.id
-                                 ? 'text-slate-900 bg-white shadow-sm'
-                                 : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
+                              ? 'text-slate-900 bg-white shadow-sm'
+                              : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
                               }`}
                         >
                            <tab.icon size={16} className={activeTab === tab.id ? 'text-teal-600' : 'opacity-50'} />

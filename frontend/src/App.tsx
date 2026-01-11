@@ -19,6 +19,8 @@ import AboutView from './views/AboutView';
 import ContactView from './views/ContactView';
 import ReportsView from './views/ReportsView';
 import AdminDashboard from './views/AdminDashboard';
+import ProfileView from './views/ProfileView';
+import FAQView from './views/FAQView';
 
 const App: React.FC = () => {
   const controller = useAppController();
@@ -88,9 +90,12 @@ const App: React.FC = () => {
         return <AboutView />;
       case 'contact':
         return <ContactView />;
+      case 'faq':
+        return <FAQView setActiveTab={setActiveTab} />;
       case 'reports':
         return <ReportsView />;
       case 'profile':
+        return <ProfileView />;
       default:
         return <div className="py-24 text-center font-black opacity-20 text-4xl">UPCOMING FEATURE</div>;
     }
@@ -135,7 +140,7 @@ const App: React.FC = () => {
           />
         )}
 
-        {((activeTab === 'services' || activeTab === 'about' || activeTab === 'contact') || (view === 'app' && role === 'USER')) && renderContent()}
+        {((activeTab === 'services' || activeTab === 'about' || activeTab === 'contact' || activeTab === 'faq') || (view === 'app' && role === 'USER')) && renderContent()}
 
         {view === 'app' && role === 'ADMIN' && <AdminDashboard onLogout={handleLogout} />}
 

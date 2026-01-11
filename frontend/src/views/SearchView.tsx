@@ -6,8 +6,6 @@ import {
     AlertTriangle,
     TrendingUp,
     ChevronRight,
-    TrendingUp,
-    ChevronRight,
     Search,
     Mic,
     Camera,
@@ -274,7 +272,6 @@ const SearchView: React.FC<SearchViewProps> = ({
                                     if (mode === 'medicine' && suggestions.length > 0) {
                                         setShowSuggestions(true);
                                     }
-                                }
                                 }}
                             />
 

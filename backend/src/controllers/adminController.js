@@ -1,10 +1,34 @@
 const Medicine = require('../models/Medicine');
 
 // GET all medicines
+// GET all medicines with Pagination and Search
 const getAllMedicines = async (req, res) => {
     try {
-        const medicines = await Medicine.find().sort({ createdAt: -1 });
-        res.json(medicines);
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const search = req.query.search || "";
+
+        const query = search
+            ? {
+                $or: [
+                    { medicineName: { $regex: search, $options: 'i' } },
+                    { uses: { $regex: search, $options: 'i' } }
+                ]
+            }
+            : {};
+
+        const total = await Medicine.countDocuments(query);
+        const medicines = await Medicine.find(query)
+            .sort({ createdAt: -1 })
+            .skip((page - 1) * limit)
+            .limit(limit);
+
+        res.json({
+            medicines,
+            total,
+            page,
+            pages: Math.ceil(total / limit)
+        });
     } catch (error) {
         res.status(500).json({ error: "Failed to fetch medicines" });
     }

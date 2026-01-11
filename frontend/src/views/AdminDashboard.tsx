@@ -3,12 +3,13 @@ import { API_BASE_URL } from '../config/apiConfig';
 import { MessageSquare, Send, CheckCircle, XCircle, Clock, Image as ImageIcon } from 'lucide-react';
 
 interface Medicine {
-    _id: string;
+    image?: string; // Base64 or URL
     medicineName: string;
     description: string;
     priceRange: string;
     uses: string;
     howToUse: string;
+    sideEffects?: string[];
 }
 
 interface Message {
@@ -37,7 +38,14 @@ interface AdminDashboardProps {
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
     const [activeSection, setActiveSection] = useState('overview');
+
+    // Medicine Management State
     const [medicines, setMedicines] = useState<Medicine[]>([]);
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [totalMedicines, setTotalMedicines] = useState(0);
+
     const [reports, setReports] = useState<Report[]>([]);
     const [selectedReport, setSelectedReport] = useState<Report | null>(null);
     const [messages, setMessages] = useState<any[]>([]);
@@ -53,7 +61,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
         howToUse: '',
         priceRange: '',
         foodInteractions: '',
-        disclaimer: ''
+        disclaimer: '',
+        image: ''
     });
     const [editingMedicineId, setEditingMedicineId] = useState<string | null>(null);
 
@@ -61,13 +70,27 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
         if (activeSection === 'medicines') fetchMedicines();
         if (activeSection === 'inquiries' || activeSection === 'analytics') fetchReports();
         if (activeSection === 'messages') fetchContactMessages();
-    }, [activeSection]);
+    }, [activeSection, page, searchQuery]); // Re-fetch on page or search change
 
     const fetchMedicines = async () => {
         try {
-            const res = await fetch(`${API_BASE_URL}/admin/all-medicines`);
+            const query = new URLSearchParams({
+                page: page.toString(),
+                limit: '10',
+                search: searchQuery
+            });
+            const res = await fetch(`${API_BASE_URL}/admin/all-medicines?${query}`);
             const data = await res.json();
-            setMedicines(data);
+
+            // Handle new paginated response
+            if (data.medicines) {
+                setMedicines(data.medicines);
+                setTotalPages(data.pages);
+                setTotalMedicines(data.total);
+            } else {
+                // Fallback for legacy format if any
+                setMedicines(Array.isArray(data) ? data : []);
+            }
         } catch (error) { console.error("Fetch medicines failed"); }
     };
 
@@ -107,7 +130,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                 setFormData({
                     medicineName: '', displayName: '', description: '',
                     uses: '', howToUse: '', priceRange: '',
-                    foodInteractions: '', disclaimer: ''
+                    foodInteractions: '', disclaimer: '', image: ''
                 });
                 fetchMedicines();
                 alert(editingMedicineId ? "Medicine Updated!" : "Medicine Added!");
@@ -123,8 +146,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
             uses: med.uses,
             howToUse: med.howToUse,
             priceRange: med.priceRange,
-            foodInteractions: '',
-            disclaimer: ''
+            foodInteractions: med.foodInteractions || '', // Ensure field exists
+            disclaimer: med.disclaimer || '',
+            image: med.image || ''
         });
         setEditingMedicineId(med._id);
         setShowAddModal(true);
@@ -222,36 +246,88 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                     {/* MEDICINE MANAGER */}
                     {activeSection === 'medicines' && (
                         <div>
-                            <div className="flex justify-between items-center mb-8">
-                                <h2 className="text-3xl font-bold">Medicine Database</h2>
-                                <button onClick={() => {
-                                    setEditingMedicineId(null);
-                                    setFormData({
-                                        medicineName: '', displayName: '', description: '',
-                                        uses: '', howToUse: '', priceRange: '',
-                                        foodInteractions: '', disclaimer: ''
-                                    });
-                                    setShowAddModal(true);
-                                }} className="bg-gradient-to-r from-teal-500 to-blue-600 px-6 py-2 rounded-lg font-bold hover:shadow-lg">+ Add New</button>
+                            <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+                                <div>
+                                    <h2 className="text-3xl font-bold">Medicine Database</h2>
+                                    <p className="text-gray-400 text-sm">{totalMedicines} medicines found</p>
+                                </div>
+                                <div className="flex gap-4 w-full md:w-auto">
+                                    <div className="relative flex-1 md:w-64">
+                                        <input
+                                            className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-4 pl-10 focus:border-teal-500 outline-none transition-colors"
+                                            placeholder="Search medicines..."
+                                            value={searchQuery}
+                                            onChange={(e) => {
+                                                setSearchQuery(e.target.value);
+                                                setPage(1); // Reset to page 1 on search
+                                            }}
+                                        />
+                                        <CheckCircle className="w-4 h-4 absolute left-3 top-3 text-gray-500" />
+                                    </div>
+                                    <button onClick={() => {
+                                        setEditingMedicineId(null);
+                                        setFormData({
+                                            medicineName: '', displayName: '', description: '',
+                                            uses: '', howToUse: '', priceRange: '',
+                                            foodInteractions: '', disclaimer: '', image: ''
+                                        });
+                                        setShowAddModal(true);
+                                    }} className="bg-gradient-to-r from-teal-500 to-blue-600 px-6 py-2 rounded-lg font-bold hover:shadow-lg whitespace-nowrap">+ Add New</button>
+                                </div>
                             </div>
+
+                            {/* Table */}
                             <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl overflow-hidden">
-                                <table className="w-full text-left">
+                                <table className="w-full text-left border-collapse">
                                     <thead className="bg-black/20 text-gray-400">
-                                        <tr><th className="p-4">Name</th><th className="p-4">Price</th><th className="p-4 text-right">Actions</th></tr>
+                                        <tr>
+                                            <th className="p-4 w-16">Image</th>
+                                            <th className="p-4">Name</th>
+                                            <th className="p-4">Uses</th>
+                                            <th className="p-4">Price</th>
+                                            <th className="p-4 text-right">Actions</th>
+                                        </tr>
                                     </thead>
                                     <tbody className="divide-y divide-white/5">
                                         {medicines.map((med) => (
-                                            <tr key={med._id}>
-                                                <td className="p-4 font-medium text-teal-300">{med.medicineName}</td>
-                                                <td className="p-4">{med.priceRange}</td>
+                                            <tr key={med._id} className="hover:bg-white/5 transition-colors">
+                                                <td className="p-4">
+                                                    {med.image ? (
+                                                        <img src={med.image} alt={med.medicineName} className="w-10 h-10 rounded-full object-cover border border-white/10" />
+                                                    ) : (
+                                                        <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-xs text-slate-500">No Img</div>
+                                                    )}
+                                                </td>
+                                                <td className="p-4 font-bold text-teal-300 capitalize">{med.medicineName}</td>
+                                                <td className="p-4 text-sm text-gray-400 max-w-xs truncate">{med.uses}</td>
+                                                <td className="p-4 font-mono text-yellow-400">{med.priceRange}</td>
                                                 <td className="p-4 text-right">
-                                                    <button onClick={() => handleEditClick(med)} className="text-teal-400 hover:text-teal-300 font-bold transition-colors">Edit</button>
-                                                    <button onClick={() => handleDelete(med._id)} className="text-red-400 ml-4 hover:text-red-300 transition-colors">Delete</button>
+                                                    <button onClick={() => handleEditClick(med)} className="text-blue-400 hover:text-blue-300 font-bold transition-colors mr-4">Edit</button>
+                                                    <button onClick={() => handleDelete(med._id)} className="text-red-400 hover:text-red-300 transition-colors">Delete</button>
                                                 </td>
                                             </tr>
                                         ))}
                                     </tbody>
                                 </table>
+
+                                {/* Pagination Controls */}
+                                <div className="p-4 flex justify-between items-center bg-black/20 border-t border-white/5">
+                                    <button
+                                        disabled={page === 1}
+                                        onClick={() => setPage(p => Math.max(1, p - 1))}
+                                        className="px-4 py-2 rounded-lg bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white/10 transition-all font-bold text-sm"
+                                    >
+                                        ← Previous
+                                    </button>
+                                    <span className="text-sm font-medium text-gray-400">Page {page} of {totalPages}</span>
+                                    <button
+                                        disabled={page >= totalPages}
+                                        onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                                        className="px-4 py-2 rounded-lg bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white/10 transition-all font-bold text-sm"
+                                    >
+                                        Next →
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     )}
@@ -513,12 +589,57 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                         <button onClick={() => setShowAddModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-white">✕</button>
                         <h2 className="text-2xl font-bold mb-6">{editingMedicineId ? 'Edit Medicine' : 'Add New Medicine'}</h2>
                         <form onSubmit={handleAddMedicine} className="space-y-4">
-                            <input required className="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-white" placeholder="Search Key (e.g. panadol)" value={formData.medicineName} onChange={e => setFormData({ ...formData, medicineName: e.target.value })} />
-                            <input required className="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-white" placeholder="Price Range" value={formData.priceRange} onChange={e => setFormData({ ...formData, priceRange: e.target.value })} />
-                            <textarea required className="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-white" placeholder="Description" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
-                            <textarea className="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-white" placeholder="Uses (comma separated)" value={formData.uses} onChange={e => setFormData({ ...formData, uses: e.target.value })} />
-                            <textarea className="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-white" placeholder="How to Use" value={formData.howToUse} onChange={e => setFormData({ ...formData, howToUse: e.target.value })} />
-                            <button type="submit" className="w-full bg-teal-500 py-3 rounded-lg font-bold">{editingMedicineId ? 'Update Medicine' : 'Add Medicine'}</button>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-xs text-gray-400 uppercase font-bold">Medicine Name</label>
+                                    <input required className="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-white focus:border-teal-500 outline-none" placeholder="e.g. Panadol" value={formData.medicineName} onChange={e => setFormData({ ...formData, medicineName: e.target.value })} />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs text-gray-400 uppercase font-bold">Price Range (LKR)</label>
+                                    <input required className="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-white focus:border-teal-500 outline-none" placeholder="e.g. 150 - 200" value={formData.priceRange} onChange={e => setFormData({ ...formData, priceRange: e.target.value })} />
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-xs text-gray-400 uppercase font-bold">Medicine Image</label>
+                                <div className="flex items-center gap-4">
+                                    {formData.image && <img src={formData.image} className="w-16 h-16 rounded-lg object-cover border border-white/10" />}
+                                    <label className="flex-1 cursor-pointer bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg p-3 text-center transition-all">
+                                        <span className="text-sm font-bold text-teal-400"><ImageIcon className="w-4 h-4 inline mr-2" /> Upload Image</span>
+                                        <input type="file" className="hidden" accept="image/*" onChange={(e) => {
+                                            const file = e.target.files?.[0];
+                                            if (file) {
+                                                const reader = new FileReader();
+                                                reader.onloadend = () => setFormData({ ...formData, image: reader.result as string });
+                                                reader.readAsDataURL(file);
+                                            }
+                                        }} />
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-xs text-gray-400 uppercase font-bold">Description (Overview)</label>
+                                <textarea required rows={3} className="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-white focus:border-teal-500 outline-none" placeholder="Detailed description of the medicine..." value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-xs text-gray-400 uppercase font-bold">Primary Uses</label>
+                                    <textarea rows={3} className="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-white focus:border-teal-500 outline-none" placeholder="Fever, Headache (Comma separated)" value={formData.uses} onChange={e => setFormData({ ...formData, uses: e.target.value })} />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs text-gray-400 uppercase font-bold">How To Use</label>
+                                    <textarea rows={3} className="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-white focus:border-teal-500 outline-none" placeholder="Take after meals..." value={formData.howToUse} onChange={e => setFormData({ ...formData, howToUse: e.target.value })} />
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-xs text-gray-400 uppercase font-bold">Safety Disclaimer</label>
+                                <input className="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-white text-sm focus:border-teal-500 outline-none" placeholder="Consult a doctor if..." value={formData.disclaimer || ''} onChange={e => setFormData({ ...formData, disclaimer: e.target.value })} />
+                            </div>
+
+                            <button type="submit" className="w-full bg-gradient-to-r from-teal-500 to-blue-600 py-4 rounded-xl font-bold text-lg hover:shadow-xl hover:scale-[1.02] transition-all">{editingMedicineId ? 'Update Medicine' : 'Add to Database'}</button>
                         </form>
                     </div>
                 </div>

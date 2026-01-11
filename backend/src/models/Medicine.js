@@ -39,6 +39,10 @@ const medicineSchema = new mongoose.Schema({
     disclaimer: {
         type: String,
         required: true
+    },
+    image: {
+        type: String, // Store as Base64 string for simplicity or URL
+        default: ""
     }
 }, { timestamps: true });
 

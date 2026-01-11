@@ -26,7 +26,7 @@ const App: React.FC = () => {
   const controller = useAppController();
   const {
     view, setView, role, activeTab, setActiveTab,
-    handleLogout, setLanguage, setIsDarkMode, isSinhala, isDarkMode,
+    handleLogout, setLanguage, setIsDarkMode, toggleTheme, isSinhala, isDarkMode,
     handleLogin, email, setEmail, password, setPassword, handleGoogleSignIn,
     handleSignUp, signUpData, setSignUpData,
     mode, setMode, setData, setSymptomData, query, setQuery, handleSearch, isLoading, data, symptomData, language, hasSearched,
@@ -142,7 +142,7 @@ const App: React.FC = () => {
 
         {((activeTab === 'services' || activeTab === 'about' || activeTab === 'contact' || activeTab === 'faq') || (view === 'app' && role === 'USER')) && renderContent()}
 
-        {view === 'app' && role === 'ADMIN' && <AdminDashboard onLogout={handleLogout} />}
+        {view === 'app' && role === 'ADMIN' && <AdminDashboard onLogout={handleLogout} isDarkMode={isDarkMode} toggleTheme={toggleTheme} />}
 
         {(role === 'USER' || view === 'landing') && <Footer />}
       </main>

@@ -4,7 +4,16 @@ const User = require('../models/User');
 // Middleware to check if user is an Admin
 const requireAdmin = async (req, res, next) => {
     try {
-        // 1. Check if authenticated with Clerk
+        // 1. DEVELOPMENT BYPASS: Support Demo Admin without Clerk Token
+        if (process.env.NODE_ENV === 'development' && req.headers['x-demo-admin'] === 'true') {
+            const demoAdmin = await User.findOne({ email: 'admin@nmra.gov.lk', role: 'admin' });
+            if (demoAdmin) {
+                req.user = demoAdmin;
+                return next();
+            }
+        }
+
+        // 2. Check if authenticated with Clerk
         if (!req.auth || !req.auth.userId) {
             return res.status(401).json({ error: "Unauthorized: No token provided" });
         }

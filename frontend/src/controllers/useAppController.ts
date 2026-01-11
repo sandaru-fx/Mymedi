@@ -306,6 +306,8 @@ export const useAppController = () => {
         setView('landing');
     };
 
+    const toggleTheme = () => setIsDarkMode(!isDarkMode);
+
     return {
         view, setView,
         role, setRole,
@@ -333,6 +335,7 @@ export const useAppController = () => {
         hasSearched, setHasSearched,
         isListening, setIsListening,
         isDarkMode, setIsDarkMode,
+        toggleTheme,
         showInquiryForm, setShowInquiryForm,
         inquiries, setInquiries,
         newInquiry, setNewInquiry,

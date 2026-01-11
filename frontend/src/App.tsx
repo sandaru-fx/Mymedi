@@ -6,6 +6,7 @@ import Footer from './components/Footer';
 import MobileNav from './components/MobileNav';
 import SOSModal from './components/SOSModal';
 import WelcomeModal from './components/WelcomeModal';
+import OnboardingTour from './components/OnboardingTour';
 import LandingPage from './views/auth/LandingPage';
 import LoginPage from './views/auth/LoginPage';
 import SignupPage from './views/auth/SignupPage';
@@ -28,7 +29,8 @@ const App: React.FC = () => {
     handleSignUp, signUpData, setSignUpData,
     mode, setMode, setData, setSymptomData, query, setQuery, handleSearch, isLoading, data, symptomData, language, hasSearched,
     handleSOSRequest, emergencyData, setEmergencyData, isSOSOpen, setIsSOSOpen,
-    showWelcome, setShowWelcome, completeWelcome
+    showWelcome, setShowWelcome, completeWelcome,
+    showOnboarding, setShowOnboarding
   } = controller;
 
   const renderContent = () => {
@@ -94,6 +96,7 @@ const App: React.FC = () => {
         setIsDarkMode={setIsDarkMode}
         handleLogout={handleLogout}
         setIsSOSOpen={setIsSOSOpen}
+        setShowOnboarding={setShowOnboarding}
       />
 
       <main className="flex-grow flex flex-col items-center relative z-10 overflow-y-auto w-full">
@@ -138,6 +141,18 @@ const App: React.FC = () => {
         onComplete={completeWelcome}
         setLanguage={setLanguage}
         language={language}
+      />
+
+      <OnboardingTour
+        isOpen={showOnboarding}
+        onComplete={() => {
+          setShowOnboarding(false);
+          if (controller.currentUser) {
+            localStorage.setItem(`onboarding_done_${controller.currentUser.id}`, 'true');
+          }
+        }}
+        language={language}
+        setActiveTab={setActiveTab}
       />
     </div>
   );

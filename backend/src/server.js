@@ -53,10 +53,12 @@ app.get('/api/health', (req, res) => {
 const medicalRoutes = require('./routes/medicalRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const reportRoutes = require('./routes/reportRoutes');
+const contactRoutes = require('./routes/contactRoutes');
 
 app.use('/api', medicalRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/contact', contactRoutes);
 
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on port ${PORT}`);

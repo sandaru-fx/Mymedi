@@ -1,8 +1,10 @@
-
 import React, { useState } from 'react';
 import { MedicineInfo, Language } from '../models/types';
-import { Info, ClipboardList, Tag, AlertTriangle, CheckCircle2, Volume2, StopCircle, Copy, Check, Flame, UtensilsCrossed, ShieldCheck, Microscope, TrendingUp, Clock, DollarSign } from 'lucide-react';
-import { motion } from 'framer-motion';
+import {
+   Info, ClipboardList, ShieldCheck, Volume2, StopCircle, Copy, Check,
+   Pill, Activity, Zap, AlertTriangle
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface MedicineCardProps {
    info: MedicineInfo;
@@ -10,11 +12,14 @@ interface MedicineCardProps {
 }
 
 const MedicineCard: React.FC<MedicineCardProps> = ({ info, language }) => {
+   const [isExpanded, setIsExpanded] = useState(false);
+   const [activeTab, setActiveTab] = useState<'overview' | 'usage' | 'safety'>('overview');
    const [isSpeaking, setIsSpeaking] = useState(false);
    const [copied, setCopied] = useState(false);
    const isSinhala = language === Language.Sinhala;
 
-   const handleSpeak = () => {
+   const handleSpeak = (e: React.MouseEvent) => {
+      e.stopPropagation();
       if (isSpeaking) {
          window.speechSynthesis.cancel();
          setIsSpeaking(false);
@@ -28,187 +33,223 @@ const MedicineCard: React.FC<MedicineCardProps> = ({ info, language }) => {
       window.speechSynthesis.speak(utterance);
    };
 
-   const copyInstructions = () => {
+   const copyInstructions = (e: React.MouseEvent) => {
+      e.stopPropagation();
       const text = `${info.medicineName}\n\n${info.description}`;
       navigator.clipboard.writeText(text);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
    };
 
+   const tabs = [
+      { id: 'overview', label: isSinhala ? 'විස්තරය' : 'Overview', icon: Info },
+      { id: 'usage', label: isSinhala ? 'භාවිතය' : 'Usage', icon: ClipboardList },
+      { id: 'safety', label: isSinhala ? 'ආරක්ෂාව' : 'Safety', icon: ShieldCheck },
+   ] as const;
+
    return (
-      <div className="w-full max-w-5xl mx-auto space-y-10 animate-fade-in-up">
-         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 px-4">
-            <div className="space-y-2">
-               <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-teal-50 dark:bg-teal-900/30 text-teal-600 font-black text-[10px] uppercase tracking-widest border border-teal-100">
-                  <ShieldCheck className="w-4 h-4" /> AI Verified Clinical Record
-               </div>
-               <h2 className="text-5xl md:text-6xl font-black text-slate-900 dark:text-slate-100 tracking-tighter">
-                  {info.medicineName}
-               </h2>
-            </div>
-            <div className="flex gap-3">
-               <button onClick={copyInstructions} className="glass-card flex items-center gap-2 px-5 py-3 rounded-2xl font-black text-xs uppercase transition-all active:scale-95 border-white/50">
-                  {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
-                  {isSinhala ? 'පිටපත් කරන්න' : 'Copy'}
-               </button>
-               <button onClick={handleSpeak} className={`flex items-center gap-3 px-6 py-3 rounded-2xl font-black text-xs uppercase shadow-2xl transition-all active:scale-95 ${isSpeaking ? 'bg-rose-500 text-white' : 'bg-slate-900 text-white dark:bg-white dark:text-slate-900'}`}>
-                  {isSpeaking ? <StopCircle className="w-4 h-4 animate-pulse" /> : <Volume2 className="w-4 h-4" />}
-                  {isSpeaking ? 'Stop' : 'Listen'}
-               </button>
-            </div>
-         </div>
-
-         {/* Premium Price Display Card */}
-         <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="relative overflow-hidden rounded-[3.5rem] shadow-2xl"
+      <motion.div
+         layout
+         className={`w-full max-w-5xl mx-auto rounded-[1.5rem] overflow-hidden shadow-xl transition-all border ${isExpanded ? 'bg-white border-teal-500/20 ring-4 ring-teal-500/5' : 'bg-white hover:bg-slate-50 border-slate-200'}`}
+      >
+         {/* COMPACT HORIZONTAL HEADER - CLICK TO EXPAND */}
+         <div
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="relative p-8 cursor-pointer group"
          >
-            <div className="absolute inset-0 bg-gradient-to-br from-teal-500 via-emerald-500 to-cyan-600"></div>
-            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLW9wYWNpdHk9IjAuMSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] opacity-30"></div>
+            <div className="flex flex-col md:flex-row justify-between items-center gap-6">
 
-            <div className="relative z-10 p-10 md:p-16">
-               <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
-                  <div className="space-y-4">
-                     <div className="flex items-center gap-3">
-                        <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-sm">
-                           <DollarSign className="w-8 h-8 text-white" />
-                        </div>
-                        <div>
-                           <p className="text-xs font-black text-white/80 uppercase tracking-[0.3em]">{isSinhala ? 'වත්මන් වෙළඳපල මිල' : 'Current Market Price'}</p>
-                           <p className="text-[10px] font-bold text-white/60 uppercase tracking-wider mt-0.5">Sri Lankan Pharmacies • 2025</p>
-                        </div>
-                     </div>
-                     <div className="flex items-baseline gap-4">
-                        <h3 className="text-6xl md:text-7xl font-black text-white tracking-tighter drop-shadow-lg">
-                           {info.priceRange}
-                        </h3>
-                        <div className="flex items-center gap-2 px-4 py-2 bg-white/20 rounded-full backdrop-blur-sm">
-                           <TrendingUp className="w-5 h-5 text-white" />
-                           <span className="text-sm font-black text-white">Live</span>
-                        </div>
-                     </div>
-                     <p className="text-sm font-bold text-white/80 max-w-md">
-                        {isSinhala ? 'මිල පරාසය සාමාන්‍ය සහ වෙළඳ නාම අනුව වෙනස් විය හැක' : 'Price may vary between generic and branded versions'}
+               {/* LEFT: INFO */}
+               <div className="flex flex-col gap-3 w-full md:w-auto">
+                  <div className="flex items-center gap-3">
+                     <span className="px-2.5 py-1 rounded-md bg-teal-50 text-teal-700 border border-teal-200 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5">
+                        <Activity className="w-3 h-3" />
+                        AI Verified
+                     </span>
+                     <span className="px-2.5 py-1 rounded-md bg-slate-100 text-slate-600 border border-slate-200 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5">
+                        <Pill className="w-3 h-3" />
+                        {isSinhala ? 'බෙහෙත්' : 'Medicine'}
+                     </span>
+                  </div>
+
+                  <div className="space-y-1">
+                     <h2 className="text-4xl font-black text-slate-900 tracking-tight leading-none group-hover:text-teal-600 transition-colors">
+                        {info.medicineName}
+                     </h2>
+                     <p className="text-slate-500 font-medium text-base line-clamp-1 group-hover:text-slate-600">
+                        {info.description}
                      </p>
                   </div>
+               </div>
 
-                  <div className="flex flex-col gap-3">
-                     <div className="glass-card bg-white/10 backdrop-blur-md border-white/30 px-6 py-4 rounded-2xl">
-                        <div className="flex items-center gap-3">
-                           <Clock className="w-5 h-5 text-white" />
-                           <div>
-                              <p className="text-[10px] font-black text-white/60 uppercase tracking-wider">Last Updated</p>
-                              <p className="text-sm font-black text-white">Today</p>
-                           </div>
-                        </div>
+               {/* RIGHT: PRICE & ACTIONS */}
+               <div className="flex items-center justify-between w-full md:w-auto gap-8">
+                  <div className="text-right">
+                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Estimated Market Price</p>
+                     <div className="text-3xl font-black text-slate-900 tracking-tight">
+                        {info.priceRange}
                      </div>
-                     <div className="glass-card bg-white/10 backdrop-blur-md border-white/30 px-6 py-4 rounded-2xl">
-                        <div className="flex items-center gap-3">
-                           <ShieldCheck className="w-5 h-5 text-white" />
-                           <div>
-                              <p className="text-[10px] font-black text-white/60 uppercase tracking-wider">Verified</p>
-                              <p className="text-sm font-black text-white">AI Checked</p>
-                           </div>
-                        </div>
-                     </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 pl-6 md:border-l md:border-slate-100">
+                     {/* Action Buttons */}
+                     <button
+                        onClick={handleSpeak}
+                        className={`p-2.5 rounded-lg transition-all border ${isSpeaking ? 'bg-indigo-50 text-indigo-600 border-indigo-200' : 'bg-white text-slate-400 border-slate-200 hover:border-slate-300 hover:text-slate-600'}`}
+                        title="Listen"
+                     >
+                        {isSpeaking ? <StopCircle size={18} className="animate-pulse" /> : <Volume2 size={18} />}
+                     </button>
+                     <button
+                        onClick={copyInstructions}
+                        className="p-2.5 rounded-lg bg-white text-slate-400 border border-slate-200 hover:border-slate-300 hover:text-teal-600 transition-all"
+                        title="Copy"
+                     >
+                        {copied ? <Check size={18} className="text-teal-600" /> : <Copy size={18} />}
+                     </button>
                   </div>
                </div>
             </div>
-         </motion.div>
+         </div>
 
-         <div className="glass-card p-1 rounded-[3.5rem] shadow-2xl overflow-hidden border-white/50">
-            <div className="bg-slate-900 dark:bg-slate-800 p-12 md:p-16 text-white relative overflow-hidden group">
-               <div className="absolute top-0 right-0 p-10 opacity-10 group-hover:scale-110 transition-transform">
-                  <Microscope className="w-40 h-40" />
-               </div>
-               <div className="relative z-10 space-y-6 max-w-2xl">
-                  <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-teal-400">Biological Description</h3>
-                  <p className="text-2xl md:text-3xl font-medium leading-relaxed italic opacity-90">
-                     "{info.description}"
-                  </p>
-               </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-1 p-1">
-               <div className="bg-white/40 dark:bg-slate-900/40 p-10 space-y-6">
-                  <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 rounded-2xl flex items-center justify-center">
-                     <CheckCircle2 className="w-6 h-6" />
-                  </div>
-                  <h4 className="text-xl font-black tracking-tight">{isSinhala ? 'භාවිතයන්' : 'Primary Uses'}</h4>
-                  <p className="text-slate-500 font-bold leading-relaxed">{info.uses}</p>
-               </div>
-
-               {/* Enhanced How to Use Section */}
-               <div className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20 p-10 space-y-6">
-                  <div className="flex items-center gap-4">
-                     <div className="w-12 h-12 bg-blue-500 text-white rounded-2xl flex items-center justify-center shadow-lg">
-                        <ClipboardList className="w-6 h-6" />
-                     </div>
-                     <div>
-                        <h4 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">{isSinhala ? 'භාවිතා කරන ආකාරය' : 'How to Use'}</h4>
-                        <p className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">Step-by-Step Guide</p>
-                     </div>
-                  </div>
-
-                  <div className="space-y-4">
-                     {info.howToUse.split('.').filter(step => step.trim()).map((step, index) => (
-                        <motion.div
-                           key={index}
-                           initial={{ opacity: 0, x: -20 }}
-                           animate={{ opacity: 1, x: 0 }}
-                           transition={{ delay: index * 0.1 }}
-                           className="flex items-start gap-4 p-4 bg-white/60 dark:bg-slate-900/40 rounded-2xl border border-blue-200 dark:border-blue-900/30"
+         {/* EXPANDED CONTENT with TABS */}
+         <AnimatePresence>
+            {isExpanded && (
+               <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.3, ease: 'easeInOut' }}
+                  className="bg-slate-50/50 border-t border-slate-200"
+               >
+                  {/* TAB NAVIGATION */}
+                  <div className="flex items-center gap-1 p-1 bg-slate-200/50 mx-6 mt-6 rounded-xl w-fit">
+                     {tabs.map((tab) => (
+                        <button
+                           key={tab.id}
+                           onClick={() => setActiveTab(tab.id as any)}
+                           className={`relative px-5 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${activeTab === tab.id
+                                 ? 'text-slate-900 bg-white shadow-sm'
+                                 : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
+                              }`}
                         >
-                           <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 text-white flex items-center justify-center font-black text-sm shrink-0 shadow-lg">
-                              {index + 1}
-                           </div>
-                           <p className="text-slate-700 dark:text-slate-200 font-bold leading-relaxed pt-1">
-                              {step.trim()}
-                           </p>
-                        </motion.div>
+                           <tab.icon size={16} className={activeTab === tab.id ? 'text-teal-600' : 'opacity-50'} />
+                           {tab.label}
+                        </button>
                      ))}
                   </div>
-               </div>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 border-t border-white/20">
-               <div className="p-10 bg-rose-50/50 dark:bg-rose-950/10 space-y-6">
-                  <div className="flex items-center gap-3 text-rose-600">
-                     <Flame className="w-6 h-6" />
-                     <h4 className="text-lg font-black uppercase tracking-tight">Side Effects</h4>
-                  </div>
-                  <ul className="grid grid-cols-1 gap-3">
-                     {info.sideEffects.map((eff, i) => (
-                        <li key={i} className="flex items-center gap-3 text-sm font-bold text-slate-600 dark:text-slate-400">
-                           <div className="w-1.5 h-1.5 rounded-full bg-rose-500" /> {eff}
-                        </li>
-                     ))}
-                  </ul>
-               </div>
-               <div className="p-10 bg-amber-50/50 dark:bg-amber-950/10 space-y-6">
-                  <div className="flex items-center gap-3 text-amber-600">
-                     <UtensilsCrossed className="w-6 h-6" />
-                     <h4 className="text-lg font-black uppercase tracking-tight">Food Warnings</h4>
-                  </div>
-                  <p className="text-sm font-bold text-slate-600 dark:text-slate-400 leading-relaxed">{info.foodInteractions}</p>
-               </div>
-            </div>
-         </div>
+                  {/* CONTENT AREA */}
+                  <div className="p-8 pt-6 min-h-[300px]">
+                     <AnimatePresence mode="wait">
+                        {activeTab === 'overview' && (
+                           <motion.div
+                              key="overview"
+                              initial={{ opacity: 0, y: 5 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: -5 }}
+                              transition={{ duration: 0.2 }}
+                              className="grid md:grid-cols-2 gap-8"
+                           >
+                              <div className="space-y-4">
+                                 <h3 className="text-lg font-bold text-slate-900">About this medicine</h3>
 
-         <div className="bg-slate-900 rounded-[2.5rem] p-10 text-white relative overflow-hidden shadow-2xl">
-            <div className="absolute top-0 right-0 p-8 opacity-20"><AlertTriangle className="w-20 h-20" /></div>
-            <div className="relative z-10 flex gap-6">
-               <div className="p-4 bg-white/10 rounded-2xl h-fit border border-white/10">
-                  <ShieldCheck className="w-8 h-8 text-teal-400" />
-               </div>
-               <div>
-                  <h5 className="text-[10px] font-black uppercase tracking-[0.3em] text-teal-400 mb-2">Legal Disclaimer</h5>
-                  <p className="font-bold opacity-80 leading-relaxed italic">{info.disclaimer}</p>
-               </div>
-            </div>
-         </div>
-      </div>
+                                 {/* Description List Rendering Logic */}
+                                 {info.description.includes('\n') ? (
+                                    <ul className="space-y-3">
+                                       {info.description.split('\n').filter(line => line.trim()).map((line, i) => (
+                                          <li key={i} className="flex items-start gap-3 text-slate-600 font-medium text-lg leading-relaxed">
+                                             <div className="pt-2"><div className="w-1.5 h-1.5 rounded-full bg-teal-500" /></div>
+                                             {line.replace(/^[-•]\s*/, '').trim()}
+                                          </li>
+                                       ))}
+                                    </ul>
+                                 ) : (
+                                    <p className="text-slate-600 leading-relaxed font-medium text-lg">
+                                       {info.description}
+                                    </p>
+                                 )}
+                              </div>
+                              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                                 <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Primary Uses</h3>
+                                 <ul className="space-y-3">
+                                    {info.uses.split(',').map((use, i) => (
+                                       <li key={i} className="flex items-start gap-3 text-slate-700 font-bold">
+                                          <div className="pt-1.5"><div className="w-1.5 h-1.5 rounded-full bg-teal-500" /></div>
+                                          {use.trim()}
+                                       </li>
+                                    ))}
+                                 </ul>
+                              </div>
+                           </motion.div>
+                        )}
+
+                        {activeTab === 'usage' && (
+                           <motion.div
+                              key="usage"
+                              initial={{ opacity: 0, y: 5 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: -5 }}
+                              transition={{ duration: 0.2 }}
+                              className="space-y-6"
+                           >
+                              <div className="bg-white border border-blue-100 p-6 rounded-2xl shadow-sm">
+                                 <h3 className="flex items-center gap-2 text-lg font-bold text-slate-900 mb-6">
+                                    <Zap size={20} className="text-blue-500" /> Usage Guide
+                                 </h3>
+                                 <div className="space-y-4">
+                                    {info.howToUse.split('.').filter(t => t.trim()).map((step, i) => (
+                                       <div key={i} className="flex gap-4">
+                                          <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-sm shrink-0">
+                                             {i + 1}
+                                          </div>
+                                          <p className="text-slate-600 font-medium pt-1">{step.trim()}</p>
+                                       </div>
+                                    ))}
+                                 </div>
+                              </div>
+                           </motion.div>
+                        )}
+
+                        {activeTab === 'safety' && (
+                           <motion.div
+                              key="safety"
+                              initial={{ opacity: 0, y: 5 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: -5 }}
+                              transition={{ duration: 0.2 }}
+                              className="grid md:grid-cols-2 gap-6"
+                           >
+                              <div className="bg-white border border-rose-100 p-6 rounded-2xl shadow-sm">
+                                 <h3 className="flex items-center gap-2 text-lg font-bold text-slate-900 mb-4">
+                                    <AlertTriangle size={20} className="text-rose-500" /> Side Effects
+                                 </h3>
+                                 <div className="flex flex-wrap gap-2">
+                                    {info.sideEffects.map((effect, i) => (
+                                       <div key={i} className="px-3 py-1.5 bg-rose-50 text-rose-700 rounded-md text-sm font-bold border border-rose-100">
+                                          {effect}
+                                       </div>
+                                    ))}
+                                 </div>
+                              </div>
+
+                              <div className="bg-white border border-amber-100 p-6 rounded-2xl shadow-sm">
+                                 <h3 className="text-lg font-bold text-slate-900 mb-4">Food Interactions</h3>
+                                 <p className="text-slate-600 font-medium">{info.foodInteractions}</p>
+                              </div>
+
+                              <div className="md:col-span-2 bg-slate-100 p-4 rounded-xl text-center">
+                                 <p className="text-[10px] text-slate-400 uppercase tracking-widest font-black mb-1">Medical Disclaimer</p>
+                                 <p className="text-xs text-slate-500 italic">{info.disclaimer}</p>
+                              </div>
+                           </motion.div>
+                        )}
+                     </AnimatePresence>
+                  </div>
+               </motion.div>
+            )}
+         </AnimatePresence>
+      </motion.div>
    );
 };
 

@@ -11,7 +11,8 @@ import {
     LogOut,
     Layout,
     Info,
-    MessageSquare
+    MessageSquare,
+    HelpCircle
 } from 'lucide-react';
 import { Tab, AuthView, Language, UserRole } from '../models/types';
 import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/clerk-react';
@@ -28,6 +29,7 @@ interface HeaderProps {
     setIsDarkMode: (val: boolean) => void;
     handleLogout: () => void;
     setIsSOSOpen: (val: boolean) => void;
+    setShowOnboarding: (val: boolean) => void;
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -41,7 +43,8 @@ const Header: React.FC<HeaderProps> = ({
     setLanguage,
     setIsDarkMode,
     handleLogout,
-    setIsSOSOpen
+    setIsSOSOpen,
+    setShowOnboarding
 }) => {
     return (
         <header className="sticky top-0 w-full z-[100] transition-all duration-300">
@@ -99,6 +102,13 @@ const Header: React.FC<HeaderProps> = ({
                                 className="p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-slate-500"
                             >
                                 {isDarkMode ? <Sun className="w-5 h-5 text-yellow-500" /> : <Moon className="w-5 h-5" />}
+                            </button>
+                            <button
+                                onClick={() => setShowOnboarding(true)}
+                                className="p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-slate-500"
+                                title="Start Tour"
+                            >
+                                <HelpCircle className="w-5 h-5 text-teal-500" />
                             </button>
                         </div>
 

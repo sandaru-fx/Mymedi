@@ -40,6 +40,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
     const [medicines, setMedicines] = useState<Medicine[]>([]);
     const [reports, setReports] = useState<Report[]>([]);
     const [selectedReport, setSelectedReport] = useState<Report | null>(null);
+    const [messages, setMessages] = useState<any[]>([]);
     const [adminChatMsg, setAdminChatMsg] = useState('');
 
     // Medicine Form State
@@ -59,6 +60,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
     useEffect(() => {
         if (activeSection === 'medicines') fetchMedicines();
         if (activeSection === 'inquiries' || activeSection === 'analytics') fetchReports();
+        if (activeSection === 'messages') fetchContactMessages();
     }, [activeSection]);
 
     const fetchMedicines = async () => {
@@ -75,6 +77,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
             const data = await res.json();
             setReports(data);
         } catch (error) { console.error("Fetch reports failed"); }
+    };
+
+    const fetchContactMessages = async () => {
+        try {
+            const res = await fetch(`${API_BASE_URL}/contact`);
+            const data = await res.json();
+            setMessages(data);
+        } catch (error) { console.error("Fetch messages failed"); }
     };
 
     const handleAddMedicine = async (e: React.FormEvent) => {
@@ -177,7 +187,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                     <nav className="space-y-4">
                         <button onClick={() => setActiveSection('overview')} className={`w-full text-left px-4 py-3 rounded-xl transition-all ${activeSection === 'overview' ? 'bg-teal-500/20 text-teal-300' : 'hover:bg-white/5 text-gray-400'}`}>📊 Overview</button>
                         <button onClick={() => setActiveSection('medicines')} className={`w-full text-left px-4 py-3 rounded-xl transition-all ${activeSection === 'medicines' ? 'bg-teal-500/20 text-teal-300' : 'hover:bg-white/5 text-gray-400'}`}>💊 Medicines</button>
-                        <button onClick={() => setActiveSection('inquiries')} className={`w-full text-left px-4 py-3 rounded-xl transition-all ${activeSection === 'inquiries' ? 'bg-teal-500/20 text-teal-300' : 'hover:bg-white/5 text-gray-400'}`}>📨 Inquiries</button>
+                        <button onClick={() => setActiveSection('inquiries')} className={`w-full text-left px-4 py-3 rounded-xl transition-all ${activeSection === 'inquiries' ? 'bg-teal-500/20 text-teal-300' : 'hover:bg-white/5 text-gray-400'}`}>📨 Price Reports</button>
+                        <button onClick={() => setActiveSection('messages')} className={`w-full text-left px-4 py-3 rounded-xl transition-all ${activeSection === 'messages' ? 'bg-teal-500/20 text-teal-300' : 'hover:bg-white/5 text-gray-400'}`}>💬 Messages</button>
                         <button onClick={() => setActiveSection('analytics')} className={`w-full text-left px-4 py-3 rounded-xl transition-all ${activeSection === 'analytics' ? 'bg-teal-500/20 text-teal-300' : 'hover:bg-white/5 text-gray-400'}`}>📈 Analytics</button>
 
                         <div className="pt-8 mt-auto border-t border-white/10 space-y-2">
@@ -198,8 +209,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                                 <p className="text-4xl font-bold">{medicines.length > 0 ? medicines.length : '50+'}</p>
                             </div>
                             <div className="bg-white/5 p-6 rounded-2xl border border-white/10">
-                                <h3 className="text-gray-400">Pending Inquiries</h3>
-                                <p className="text-4xl font-bold text-yellow-400">3</p>
+                                <h3 className="text-gray-400">Pending Reports</h3>
+                                <p className="text-4xl font-bold text-yellow-400">{reports.filter(r => r.status === 'Pending').length}</p>
+                            </div>
+                            <div className="bg-white/5 p-6 rounded-2xl border border-white/10">
+                                <h3 className="text-gray-400">Unread Messages</h3>
+                                <p className="text-4xl font-bold text-teal-400">{messages.filter(m => m.status === 'Unread').length}</p>
                             </div>
                         </div>
                     )}
@@ -246,7 +261,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[700px]">
                             {/* List */}
                             <div className="col-span-1 bg-white/5 rounded-2xl p-4 overflow-y-auto border border-white/10">
-                                <h2 className="text-xl font-bold mb-4">User Reports</h2>
+                                <h2 className="text-xl font-bold mb-4">Price Reports</h2>
                                 {reports.map(rep => (
                                     <div key={rep._id} onClick={() => setSelectedReport(rep)}
                                         className={`p-4 rounded-xl mb-2 cursor-pointer transition-all ${selectedReport?._id === rep._id ? 'bg-teal-500/20 border border-teal-500/50' : 'bg-white/5 hover:bg-white/10'}`}>
@@ -309,6 +324,58 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                             </div>
                         </div>
                     )}
+                    {/* MESSAGES (NEW) */}
+                    {activeSection === 'messages' && (
+                        <div className="space-y-6">
+                            <h2 className="text-3xl font-bold text-white mb-6">General Messages</h2>
+                            <div className="grid gap-4">
+                                {messages.map(msg => (
+                                    <div key={msg._id} className="bg-white/5 p-6 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors">
+                                        <div className="flex justify-between items-start mb-4">
+                                            <div>
+                                                <h3 className="text-xl font-bold text-teal-400">{msg.subject}</h3>
+                                                <p className="text-sm text-gray-400">From: {msg.name} ({msg.email})</p>
+                                            </div>
+                                            <div className="flex flex-col items-end gap-2">
+                                                <span className={`px-3 py-1 rounded-full text-xs font-bold ${msg.status === 'Unread' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-green-500/20 text-green-400'}`}>
+                                                    {msg.status}
+                                                </span>
+                                                <span className="text-xs text-gray-500">{new Date(msg.createdAt).toLocaleDateString()}</span>
+                                            </div>
+                                        </div>
+                                        <p className="text-gray-300 leading-relaxed bg-black/20 p-4 rounded-xl">{msg.message}</p>
+                                        <div className="mt-4 flex gap-2">
+                                            <a href={`mailto:${msg.email}`} className="px-4 py-2 bg-teal-500/20 text-teal-400 rounded-lg text-sm font-bold hover:bg-teal-500/30 transition-colors">
+                                                Reply via Email
+                                            </a>
+                                            {msg.status === 'Unread' && (
+                                                <button
+                                                    onClick={async () => {
+                                                        await fetch(`${API_BASE_URL}/contact/${msg._id}/status`, {
+                                                            method: 'PATCH',
+                                                            headers: { 'Content-Type': 'application/json' },
+                                                            body: JSON.stringify({ status: 'Read' })
+                                                        });
+                                                        fetchContactMessages();
+                                                    }}
+                                                    className="px-4 py-2 bg-white/5 text-gray-400 rounded-lg text-sm font-bold hover:bg-white/10 transition-colors"
+                                                >
+                                                    Mark as Read
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                                {messages.length === 0 && (
+                                    <div className="text-center py-20 text-gray-500">
+                                        <MessageSquare className="w-16 h-16 mx-auto mb-4 opacity-20" />
+                                        <p>No messages found</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
                     {/* ANALYTICS (NEW) */}
                     {activeSection === 'analytics' && (
                         <div className="space-y-8 animate-fade-in-up">

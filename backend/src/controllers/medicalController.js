@@ -65,6 +65,11 @@ const getMedicineDetails = async (req, res) => {
             IMPORTANT FOR HOW TO USE:
             - Provide step-by-step instructions.
             - Be clear and specific.
+
+            IMPORTANT FOR DESCRIPTION:
+            - Provide exactly 3 short, distinct bullet points or sentences.
+            - Focus on: What class of drug it is, What it treats, and How it works.
+            - Separate points with a newline.
         `;
 
         const result = await model.generateContent(prompt);

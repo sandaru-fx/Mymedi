@@ -141,7 +141,7 @@ const ReportsView: React.FC = () => {
 
     return (
         <div className="w-full max-w-6xl mx-auto p-6 animate-fade-in-up pb-24">
-            <h1 className="text-4xl font-black mb-8 text-center text-slate-900 dark:text-white">Reporting Center</h1>
+            <h1 className="text-4xl font-black mb-8 text-center text-slate-900 dark:text-white">Price Reporting Center</h1>
 
             {showSuccess && (
                 <div className="mb-6 p-4 bg-green-500/10 border border-green-500 rounded-2xl flex items-center justify-center gap-2 text-green-600 animate-fade-in-up">

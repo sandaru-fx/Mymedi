@@ -18,7 +18,41 @@ const ContactCard = ({ icon: Icon, title, detail, subDetail, color }: any) => (
     </motion.div>
 );
 
+import { useState } from 'react';
+import { API_BASE_URL } from '../config/apiConfig';
+
 const ContactView = () => {
+    const [formData, setFormData] = useState({
+        name: '',
+        email: '',
+        subject: '',
+        message: ''
+    });
+    const [submitStatus, setSubmitStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setSubmitStatus('submitting');
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/contact`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+
+            if (response.ok) {
+                setSubmitStatus('success');
+                setFormData({ name: '', email: '', subject: '', message: '' });
+            } else {
+                setSubmitStatus('error');
+            }
+        } catch (error) {
+            console.error('Failed to send message:', error);
+            setSubmitStatus('error');
+        }
+    };
+
     return (
         <div className="relative bg-slate-50 dark:bg-slate-950 py-32 px-6 w-full overflow-hidden min-h-screen">
 
@@ -92,49 +126,81 @@ const ContactView = () => {
                     <div className="lg:col-span-3 p-10 md:p-16 bg-white/40 dark:bg-slate-900/40 backdrop-blur-xl">
                         <div className="flex items-center gap-4 mb-12 text-teal-600 dark:text-teal-400">
                             <MessageSquare size={40} className="drop-shadow-lg" />
-                            <h2 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">Submit an Inquiry</h2>
+                            <h2 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">Send a Message</h2>
                         </div>
 
-                        <form className="space-y-8">
-                            <div className="grid md:grid-cols-2 gap-8">
-                                <div className="space-y-3">
-                                    <label className="block text-sm font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
-                                    <input type="text" className="w-full p-5 bg-white/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 outline-none transition-all font-bold text-lg dark:text-white" placeholder="John Doe" />
-                                </div>
-                                <div className="space-y-3">
-                                    <label className="block text-sm font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
-                                    <input type="email" className="w-full p-5 bg-white/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 outline-none transition-all font-bold text-lg dark:text-white" placeholder="john@example.com" />
-                                </div>
+                        {submitStatus === 'success' ? (
+                            <div className="bg-teal-500/10 border border-teal-500/20 rounded-2xl p-8 text-center">
+                                <h3 className="text-2xl font-black text-teal-600 mb-2">Message Sent!</h3>
+                                <p className="text-slate-500 dark:text-slate-400 font-medium">Thank you for contacting us. We will get back to you shortly.</p>
+                                <button
+                                    onClick={() => setSubmitStatus('idle')}
+                                    className="mt-6 px-6 py-2 bg-teal-500 text-white rounded-xl font-bold hover:bg-teal-600 transition-colors"
+                                >
+                                    Send Another
+                                </button>
                             </div>
-
-                            <div className="space-y-3">
-                                <label className="block text-sm font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Inquiry Type</label>
-                                <div className="relative">
-                                    <select className="w-full p-5 bg-white/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 outline-none appearance-none font-bold text-lg dark:text-white transition-all cursor-pointer">
-                                        <option>Medicine Price Discrepancy</option>
-                                        <option>Expired/Low Quality Stock</option>
-                                        <option>Pharmacy Misconduct</option>
-                                        <option>General Feedback</option>
-                                    </select>
-                                    <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none opacity-50">
-                                        <ExternalLink size={20} />
+                        ) : (
+                            <form onSubmit={handleSubmit} className="space-y-8">
+                                <div className="grid md:grid-cols-2 gap-8">
+                                    <div className="space-y-3">
+                                        <label className="block text-sm font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
+                                        <input
+                                            type="text"
+                                            required
+                                            value={formData.name}
+                                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                            className="w-full p-5 bg-white/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 outline-none transition-all font-bold text-lg dark:text-white"
+                                            placeholder="John Doe"
+                                        />
+                                    </div>
+                                    <div className="space-y-3">
+                                        <label className="block text-sm font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
+                                        <input
+                                            type="email"
+                                            required
+                                            value={formData.email}
+                                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                            className="w-full p-5 bg-white/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 outline-none transition-all font-bold text-lg dark:text-white"
+                                            placeholder="john@example.com"
+                                        />
                                     </div>
                                 </div>
-                            </div>
 
-                            <div className="space-y-3">
-                                <label className="block text-sm font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Description</label>
-                                <textarea rows={5} className="w-full p-5 bg-white/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 outline-none transition-all font-bold text-lg dark:text-white" placeholder="Please provide details (Pharmacy name, Medicine name, and Price difference)..."></textarea>
-                            </div>
+                                <div className="space-y-3">
+                                    <label className="block text-sm font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Subject</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        value={formData.subject}
+                                        onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                                        className="w-full p-5 bg-white/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 outline-none transition-all font-bold text-lg dark:text-white"
+                                        placeholder="General Inquiry / Feedback"
+                                    />
+                                </div>
 
-                            <motion.button
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                                className="w-full bg-slate-950 dark:bg-white text-white dark:text-slate-950 font-black py-6 rounded-2xl shadow-2xl hover:bg-teal-600 dark:hover:bg-teal-500 dark:hover:text-white transition-all flex items-center justify-center gap-4 text-2xl group"
-                            >
-                                Send Inquiry <HeartPulse className="w-8 h-8 group-hover:animate-pulse" />
-                            </motion.button>
-                        </form>
+                                <div className="space-y-3">
+                                    <label className="block text-sm font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Message</label>
+                                    <textarea
+                                        rows={5}
+                                        required
+                                        value={formData.message}
+                                        onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                                        className="w-full p-5 bg-white/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 outline-none transition-all font-bold text-lg dark:text-white"
+                                        placeholder="How can we help you today?..."
+                                    ></textarea>
+                                </div>
+
+                                <motion.button
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                    disabled={submitStatus === 'submitting'}
+                                    className="w-full bg-slate-950 dark:bg-white text-white dark:text-slate-950 font-black py-6 rounded-2xl shadow-2xl hover:bg-teal-600 dark:hover:bg-teal-500 dark:hover:text-white transition-all flex items-center justify-center gap-4 text-2xl group disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {submitStatus === 'submitting' ? 'Sending...' : 'Send Message'} <HeartPulse className="w-8 h-8 group-hover:animate-pulse" />
+                                </motion.button>
+                            </form>
+                        )}
                     </div>
 
                     {/* Right Column: Official Guide (2/5 width) */}

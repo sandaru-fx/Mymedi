@@ -75,7 +75,7 @@ export const useAppController = () => {
     const [isListening, setIsListening] = useState(false);
     const [isDarkMode, setIsDarkMode] = useState(() => {
         const saved = localStorage.getItem('theme');
-        return saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        return saved === 'dark';
     });
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -315,7 +315,6 @@ export const useAppController = () => {
         handleSignUp,
         handleGoogleSignIn,
         handleSearch,
-        handleSOSRequest,
         handleSOSRequest,
         handleLogout,
         showWelcome,

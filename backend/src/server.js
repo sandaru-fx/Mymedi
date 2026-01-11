@@ -16,9 +16,25 @@ if (!process.env.GEMINI_API_KEY) {
 }
 
 // Update this part for MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI)
-    .then(() => console.log('MongoDB Connected Successfully'))
-    .catch(err => console.log('MongoDB Connection Error:', err));
+// MongoDB Connection with Retry
+const connectDB = async (retries = 5) => {
+    try {
+        await mongoose.connect(process.env.MONGODB_URI, {
+            family: 4 // Use IPv4 to avoid ENOTFOUND on some networks
+        });
+        console.log('MongoDB Connected Successfully');
+    } catch (err) {
+        console.log(`MongoDB Connection Error: ${err.message}`);
+        if (retries > 0) {
+            console.log(`Retrying connection in 5 seconds... (${retries} attempts left)`);
+            setTimeout(() => connectDB(retries - 1), 5000);
+        } else {
+            console.error('Failed to connect to MongoDB after multiple attempts.');
+        }
+    }
+};
+
+connectDB();
 
 app.use(cors());
 app.use((req, res, next) => {

@@ -18,6 +18,15 @@ interface Message {
     timestamp: string;
 }
 
+interface User {
+    _id: string;
+    name: string;
+    email: string;
+    role: string;
+    isBanned: boolean;
+    createdAt: string;
+}
+
 interface Report {
     _id: string;
     userEmail: string;
@@ -51,6 +60,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
     const [messages, setMessages] = useState<any[]>([]);
     const [adminChatMsg, setAdminChatMsg] = useState('');
 
+    const [users, setUsers] = useState<User[]>([]);
+
     // Medicine Form State
     const [showAddModal, setShowAddModal] = useState(false);
     const [formData, setFormData] = useState({
@@ -70,6 +81,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
         if (activeSection === 'medicines') fetchMedicines();
         if (activeSection === 'inquiries' || activeSection === 'analytics') fetchReports();
         if (activeSection === 'messages') fetchContactMessages();
+        if (activeSection === 'users') fetchUsers();
     }, [activeSection, page, searchQuery]); // Re-fetch on page or search change
 
     const fetchMedicines = async () => {
@@ -108,6 +120,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
             const data = await res.json();
             setMessages(data);
         } catch (error) { console.error("Fetch messages failed"); }
+    };
+
+    const fetchUsers = async () => {
+        try {
+            const res = await fetch(`${API_BASE_URL}/users/all`);
+            const data = await res.json();
+            setUsers(data.users || []);
+        } catch (error) { console.error("Fetch users failed"); }
+    };
+
+    const toggleBanUser = async (id: string, currentStatus: boolean) => {
+        if (!confirm(`Are you sure you want to ${currentStatus ? 'UNBAN' : 'BAN'} this user?`)) return;
+        try {
+            await fetch(`${API_BASE_URL}/users/${id}/ban`, { method: 'PATCH' });
+            fetchUsers();
+        } catch (err) { alert("Action failed"); }
     };
 
     const handleAddMedicine = async (e: React.FormEvent) => {
@@ -213,6 +241,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                         <button onClick={() => setActiveSection('medicines')} className={`w-full text-left px-4 py-3 rounded-xl transition-all ${activeSection === 'medicines' ? 'bg-teal-500/20 text-teal-300' : 'hover:bg-white/5 text-gray-400'}`}>💊 Medicines</button>
                         <button onClick={() => setActiveSection('inquiries')} className={`w-full text-left px-4 py-3 rounded-xl transition-all ${activeSection === 'inquiries' ? 'bg-teal-500/20 text-teal-300' : 'hover:bg-white/5 text-gray-400'}`}>📨 Price Reports</button>
                         <button onClick={() => setActiveSection('messages')} className={`w-full text-left px-4 py-3 rounded-xl transition-all ${activeSection === 'messages' ? 'bg-teal-500/20 text-teal-300' : 'hover:bg-white/5 text-gray-400'}`}>💬 Messages</button>
+                        <button onClick={() => setActiveSection('users')} className={`w-full text-left px-4 py-3 rounded-xl transition-all ${activeSection === 'users' ? 'bg-teal-500/20 text-teal-300' : 'hover:bg-white/5 text-gray-400'}`}>👥 Users</button>
                         <button onClick={() => setActiveSection('analytics')} className={`w-full text-left px-4 py-3 rounded-xl transition-all ${activeSection === 'analytics' ? 'bg-teal-500/20 text-teal-300' : 'hover:bg-white/5 text-gray-400'}`}>📈 Analytics</button>
 
                         <div className="pt-8 mt-auto border-t border-white/10 space-y-2">
@@ -452,6 +481,50 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                         </div>
                     )}
 
+                    {/* USERS MANAGER (NEW) */}
+                    {activeSection === 'users' && (
+                        <div>
+                            <h2 className="text-3xl font-bold mb-6">User Database</h2>
+                            <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl overflow-hidden">
+                                <table className="w-full text-left">
+                                    <thead className="bg-black/20 text-gray-400">
+                                        <tr>
+                                            <th className="p-4">Name</th>
+                                            <th className="p-4">Email</th>
+                                            <th className="p-4">Role</th>
+                                            <th className="p-4">Status</th>
+                                            <th className="p-4 text-right">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-white/5">
+                                        {users.map(user => (
+                                            <tr key={user._id} className="hover:bg-white/5">
+                                                <td className="p-4 font-bold">{user.name || 'Unknown'}</td>
+                                                <td className="p-4 text-gray-400">{user.email}</td>
+                                                <td className="p-4"><span className="bg-white/10 px-2 py-1 rounded text-xs">{user.role}</span></td>
+                                                <td className="p-4">
+                                                    {user.isBanned
+                                                        ? <span className="text-red-400 font-bold bg-red-500/20 px-2 py-1 rounded text-xs">BANNED</span>
+                                                        : <span className="text-green-400 font-bold bg-green-500/20 px-2 py-1 rounded text-xs">ACTIVE</span>}
+                                                </td>
+                                                <td className="p-4 text-right">
+                                                    {user.role !== 'admin' && (
+                                                        <button
+                                                            onClick={() => toggleBanUser(user._id, user.isBanned)}
+                                                            className={`px-4 py-2 rounded-lg font-bold text-xs ${user.isBanned ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}
+                                                        >
+                                                            {user.isBanned ? 'UNBAN' : 'BAN USER'}
+                                                        </button>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
+
                     {/* ANALYTICS (NEW) */}
                     {activeSection === 'analytics' && (
                         <div className="space-y-8 animate-fade-in-up">
@@ -583,68 +656,70 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
             </div>
 
             {/* ADD MEDICINE MODAL */}
-            {showAddModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-                    <div className="bg-gray-800 border border-white/10 rounded-2xl p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto relative">
-                        <button onClick={() => setShowAddModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-white">✕</button>
-                        <h2 className="text-2xl font-bold mb-6">{editingMedicineId ? 'Edit Medicine' : 'Add New Medicine'}</h2>
-                        <form onSubmit={handleAddMedicine} className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
+            {
+                showAddModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                        <div className="bg-gray-800 border border-white/10 rounded-2xl p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto relative">
+                            <button onClick={() => setShowAddModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-white">✕</button>
+                            <h2 className="text-2xl font-bold mb-6">{editingMedicineId ? 'Edit Medicine' : 'Add New Medicine'}</h2>
+                            <form onSubmit={handleAddMedicine} className="space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <label className="text-xs text-gray-400 uppercase font-bold">Medicine Name</label>
+                                        <input required className="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-white focus:border-teal-500 outline-none" placeholder="e.g. Panadol" value={formData.medicineName} onChange={e => setFormData({ ...formData, medicineName: e.target.value })} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-xs text-gray-400 uppercase font-bold">Price Range (LKR)</label>
+                                        <input required className="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-white focus:border-teal-500 outline-none" placeholder="e.g. 150 - 200" value={formData.priceRange} onChange={e => setFormData({ ...formData, priceRange: e.target.value })} />
+                                    </div>
+                                </div>
+
                                 <div className="space-y-2">
-                                    <label className="text-xs text-gray-400 uppercase font-bold">Medicine Name</label>
-                                    <input required className="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-white focus:border-teal-500 outline-none" placeholder="e.g. Panadol" value={formData.medicineName} onChange={e => setFormData({ ...formData, medicineName: e.target.value })} />
+                                    <label className="text-xs text-gray-400 uppercase font-bold">Medicine Image</label>
+                                    <div className="flex items-center gap-4">
+                                        {formData.image && <img src={formData.image} className="w-16 h-16 rounded-lg object-cover border border-white/10" />}
+                                        <label className="flex-1 cursor-pointer bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg p-3 text-center transition-all">
+                                            <span className="text-sm font-bold text-teal-400"><ImageIcon className="w-4 h-4 inline mr-2" /> Upload Image</span>
+                                            <input type="file" className="hidden" accept="image/*" onChange={(e) => {
+                                                const file = e.target.files?.[0];
+                                                if (file) {
+                                                    const reader = new FileReader();
+                                                    reader.onloadend = () => setFormData({ ...formData, image: reader.result as string });
+                                                    reader.readAsDataURL(file);
+                                                }
+                                            }} />
+                                        </label>
+                                    </div>
                                 </div>
+
                                 <div className="space-y-2">
-                                    <label className="text-xs text-gray-400 uppercase font-bold">Price Range (LKR)</label>
-                                    <input required className="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-white focus:border-teal-500 outline-none" placeholder="e.g. 150 - 200" value={formData.priceRange} onChange={e => setFormData({ ...formData, priceRange: e.target.value })} />
+                                    <label className="text-xs text-gray-400 uppercase font-bold">Description (Overview)</label>
+                                    <textarea required rows={3} className="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-white focus:border-teal-500 outline-none" placeholder="Detailed description of the medicine..." value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
                                 </div>
-                            </div>
 
-                            <div className="space-y-2">
-                                <label className="text-xs text-gray-400 uppercase font-bold">Medicine Image</label>
-                                <div className="flex items-center gap-4">
-                                    {formData.image && <img src={formData.image} className="w-16 h-16 rounded-lg object-cover border border-white/10" />}
-                                    <label className="flex-1 cursor-pointer bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg p-3 text-center transition-all">
-                                        <span className="text-sm font-bold text-teal-400"><ImageIcon className="w-4 h-4 inline mr-2" /> Upload Image</span>
-                                        <input type="file" className="hidden" accept="image/*" onChange={(e) => {
-                                            const file = e.target.files?.[0];
-                                            if (file) {
-                                                const reader = new FileReader();
-                                                reader.onloadend = () => setFormData({ ...formData, image: reader.result as string });
-                                                reader.readAsDataURL(file);
-                                            }
-                                        }} />
-                                    </label>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <label className="text-xs text-gray-400 uppercase font-bold">Primary Uses</label>
+                                        <textarea rows={3} className="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-white focus:border-teal-500 outline-none" placeholder="Fever, Headache (Comma separated)" value={formData.uses} onChange={e => setFormData({ ...formData, uses: e.target.value })} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-xs text-gray-400 uppercase font-bold">How To Use</label>
+                                        <textarea rows={3} className="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-white focus:border-teal-500 outline-none" placeholder="Take after meals..." value={formData.howToUse} onChange={e => setFormData({ ...formData, howToUse: e.target.value })} />
+                                    </div>
                                 </div>
-                            </div>
 
-                            <div className="space-y-2">
-                                <label className="text-xs text-gray-400 uppercase font-bold">Description (Overview)</label>
-                                <textarea required rows={3} className="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-white focus:border-teal-500 outline-none" placeholder="Detailed description of the medicine..." value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <label className="text-xs text-gray-400 uppercase font-bold">Primary Uses</label>
-                                    <textarea rows={3} className="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-white focus:border-teal-500 outline-none" placeholder="Fever, Headache (Comma separated)" value={formData.uses} onChange={e => setFormData({ ...formData, uses: e.target.value })} />
+                                    <label className="text-xs text-gray-400 uppercase font-bold">Safety Disclaimer</label>
+                                    <input className="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-white text-sm focus:border-teal-500 outline-none" placeholder="Consult a doctor if..." value={formData.disclaimer || ''} onChange={e => setFormData({ ...formData, disclaimer: e.target.value })} />
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="text-xs text-gray-400 uppercase font-bold">How To Use</label>
-                                    <textarea rows={3} className="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-white focus:border-teal-500 outline-none" placeholder="Take after meals..." value={formData.howToUse} onChange={e => setFormData({ ...formData, howToUse: e.target.value })} />
-                                </div>
-                            </div>
 
-                            <div className="space-y-2">
-                                <label className="text-xs text-gray-400 uppercase font-bold">Safety Disclaimer</label>
-                                <input className="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-white text-sm focus:border-teal-500 outline-none" placeholder="Consult a doctor if..." value={formData.disclaimer || ''} onChange={e => setFormData({ ...formData, disclaimer: e.target.value })} />
-                            </div>
-
-                            <button type="submit" className="w-full bg-gradient-to-r from-teal-500 to-blue-600 py-4 rounded-xl font-bold text-lg hover:shadow-xl hover:scale-[1.02] transition-all">{editingMedicineId ? 'Update Medicine' : 'Add to Database'}</button>
-                        </form>
+                                <button type="submit" className="w-full bg-gradient-to-r from-teal-500 to-blue-600 py-4 rounded-xl font-bold text-lg hover:shadow-xl hover:scale-[1.02] transition-all">{editingMedicineId ? 'Update Medicine' : 'Add to Database'}</button>
+                            </form>
+                        </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 };
 

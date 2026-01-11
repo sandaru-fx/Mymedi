@@ -33,6 +33,22 @@ const App: React.FC = () => {
     showOnboarding, setShowOnboarding
   } = controller;
 
+  // Sync User to Backend on Login
+  React.useEffect(() => {
+    if (controller.currentUser) {
+      // Sync user to local DB
+      fetch('http://localhost:5001/api/users/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clerkId: controller.currentUser.id,
+          email: controller.currentUser.primaryEmailAddress?.emailAddress,
+          name: controller.currentUser.fullName
+        })
+      }).catch(err => console.error("User Sync Failed", err));
+    }
+  }, [controller.currentUser]);
+
   const renderContent = () => {
     switch (activeTab) {
       case 'home':
@@ -123,7 +139,7 @@ const App: React.FC = () => {
 
         {view === 'app' && role === 'ADMIN' && <AdminDashboard onLogout={handleLogout} />}
 
-        {((view === 'app' && role === 'ADMIN') || role === 'USER' || view === 'landing') && <Footer />}
+        {(role === 'USER' || view === 'landing') && <Footer />}
       </main>
 
       {view === 'app' && role === 'USER' && (

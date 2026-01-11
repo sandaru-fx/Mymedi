@@ -3,6 +3,16 @@ const Report = require('../models/Report');
 // Submit a new report (User)
 const submitReport = async (req, res) => {
     try {
+        const { userEmail } = req.body;
+
+        // Check local User DB for ban status
+        const User = require('../models/User'); // Lazy load
+        const user = await User.findOne({ email: userEmail });
+
+        if (user && user.isBanned) {
+            return res.status(403).json({ error: "Your account has been suspended. You cannot submit reports." });
+        }
+
         const report = new Report(req.body);
         await report.save();
         res.status(201).json(report);

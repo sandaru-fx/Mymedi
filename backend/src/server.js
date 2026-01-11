@@ -57,8 +57,10 @@ const contactRoutes = require('./routes/contactRoutes');
 
 app.use('/api', medicalRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/reports', reportRoutes);
+app.use('/api/report', reportRoutes); // Legacy support if needed? No, standardizing to plural
+app.use('/api/reports', reportRoutes);  // Corrected path
 app.use('/api/contact', contactRoutes);
+app.use('/api/users', require('./routes/userRoutes'));
 
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on port ${PORT}`);

@@ -46,6 +46,9 @@ const Header: React.FC<HeaderProps> = ({
     setIsSOSOpen,
     setShowOnboarding
 }) => {
+    // Standard Practice: Hide Public Navbar for Admins to provide a focused workspace
+    if (view === 'app' && role === 'ADMIN') return null;
+
     return (
         <header className="sticky top-0 w-full z-[100] transition-all duration-300">
             <div className="max-w-7xl mx-auto px-6 py-4">

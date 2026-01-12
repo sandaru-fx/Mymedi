@@ -82,6 +82,8 @@ exports.replyToMessage = async (req, res) => {
             { adminReply, status: 'Replied' },
             { new: true }
         );
+        const { logAction } = require('../utils/logger');
+        await logAction('REPLY_INQUIRY', 'Admin', `Replied to inquiry: ${message.subject}`, message._id);
 
         if (!message) {
             return res.status(404).json({ success: false, message: 'Message not found' });
@@ -108,6 +110,8 @@ exports.toggleBlockMessage = async (req, res) => {
 
         message.isBlocked = !message.isBlocked;
         await message.save();
+        const { logAction } = require('../utils/logger');
+        await logAction(message.isBlocked ? 'BLOCK_INQUIRY' : 'UNBLOCK_INQUIRY', 'Admin', `${message.isBlocked ? 'Blocked' : 'Unblocked'} inquiry from: ${message.email}`, message._id);
 
         res.status(200).json({
             success: true,

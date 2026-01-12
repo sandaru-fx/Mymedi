@@ -2,6 +2,9 @@ const Medicine = require('../models/Medicine');
 const xlsx = require('xlsx');
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const Report = require('../models/Report');
+const AuditLog = require('../models/AuditLog');
+const { logAction } = require('../utils/logger');
+const mongoose = require('mongoose');
 
 // GET all medicines with Pagination and Search
 const getAllMedicines = async (req, res) => {
@@ -41,6 +44,7 @@ const addMedicine = async (req, res) => {
     try {
         const newMedicine = new Medicine(req.body);
         await newMedicine.save();
+        await logAction('ADD_MEDICINE', 'Admin', `Added medicine: ${newMedicine.medicineName}`, newMedicine._id);
         res.status(201).json(newMedicine);
     } catch (error) {
         console.error("Add Medicine Error:", error);
@@ -53,6 +57,7 @@ const updateMedicine = async (req, res) => {
     try {
         const { id } = req.params;
         const updatedMedicine = await Medicine.findByIdAndUpdate(id, req.body, { new: true });
+        await logAction('UPDATE_MEDICINE', 'Admin', `Updated medicine: ${updatedMedicine.medicineName}`, id);
         res.json(updatedMedicine);
     } catch (error) {
         res.status(500).json({ error: "Failed to update medicine" });
@@ -64,6 +69,7 @@ const deleteMedicine = async (req, res) => {
     try {
         const { id } = req.params;
         await Medicine.findByIdAndDelete(id);
+        await logAction('DELETE_MEDICINE', 'Admin', `Deleted medicine ID: ${id}`, id);
         res.json({ message: "Medicine deleted successfully" });
     } catch (error) {
         res.status(500).json({ error: "Failed to delete medicine" });
@@ -105,6 +111,7 @@ const bulkUploadMedicines = async (req, res) => {
             }
         }
 
+        await logAction('BULK_UPLOAD', 'Admin', `Bulk uploaded ${successCount} medicines`);
         res.json({ message: `Successfully added ${successCount} medicines`, errors });
     } catch (error) {
         console.error("Bulk Upload Error:", error);
@@ -164,11 +171,77 @@ const getAIAnalytics = async (req, res) => {
     }
 };
 
+// AUDIT LOGS
+const getAuditLogs = async (req, res) => {
+    try {
+        const logs = await AuditLog.find().sort({ createdAt: -1 }).limit(100);
+        res.json(logs);
+    } catch (error) {
+        res.status(500).json({ error: "Failed to fetch audit logs" });
+    }
+};
+
+// SYSTEM HEALTH
+const getSystemHealth = async (req, res) => {
+    try {
+        const dbStatus = mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected';
+        res.json({
+            status: 'Operational',
+            database: dbStatus,
+            uptime: process.uptime(),
+            timestamp: new Date()
+        });
+    } catch (error) {
+        res.status(500).json({ error: "Health check failed" });
+    }
+};
+
+// AI FRAUD ANALYSIS
+const analyzeReportFraud = async (req, res) => {
+    try {
+        const { reportId } = req.body;
+        const report = await Report.findById(reportId);
+        if (!report) return res.status(404).json({ error: "Report not found" });
+
+        const prompt = `Analyze this pharmacy complaint for potential fraud or malicious intent.
+        Report Details:
+        - Pharmacy: ${report.pharmacyName}
+        - Medicine: ${report.medicineName}
+        - Price Paid: ${report.pricePaid}
+        - Reporter Message History: ${JSON.stringify(report.messages)}
+        
+        Is this report likely legitimate or suspicious? 
+        Consider: 
+        1. Repeated targetting of same pharmacy? (N/A here but assume context).
+        2. Unrealistic price?
+        
+        Output JSON: { "riskScore": number (0-100), "reason": "string", "verdict": "Likely Legitimate" | "Suspicious" }`;
+
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+
+        // Clean markdown code blocks if present
+        const text = response.text().replace(/```json/g, '').replace(/```/g, '').trim();
+        const analysis = JSON.parse(text);
+
+        res.json(analysis);
+
+    } catch (error) {
+        console.error("Fraud Analysis Error:", error);
+        res.status(500).json({ error: "Analysis failed", details: error.message });
+    }
+};
+
 module.exports = {
     getAllMedicines,
     addMedicine,
     updateMedicine,
     deleteMedicine,
     bulkUploadMedicines,
-    getAIAnalytics
+    getAIAnalytics,
+    getAuditLogs,
+    getSystemHealth,
+    analyzeReportFraud
 };

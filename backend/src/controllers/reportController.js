@@ -70,11 +70,13 @@ const updateStatus = async (req, res) => {
         const { id } = req.params;
         const { status } = req.body;
 
+        const { logAction } = require('../utils/logger');
         const report = await Report.findByIdAndUpdate(
             id,
             { status },
             { new: true }
         );
+        await logAction('RESOLVE_REPORT', 'Admin', `Updated report status to ${status}`, id);
         res.json(report);
     } catch (error) {
         res.status(500).json({ error: "Failed to update status." });

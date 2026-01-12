@@ -5,9 +5,10 @@ const mongoose = require('mongoose');
 const { clerkMiddleware } = require('@clerk/express');
 
 dotenv.config();
+process.env.NODE_ENV = process.env.NODE_ENV || 'development';
 
 const app = express();
-const PORT = process.env.PORT || 5001;
+const PORT = 5002;
 
 if (!process.env.GEMINI_API_KEY) {
     console.error('CRITICAL: GEMINI_API_KEY is not defined in .env file!');

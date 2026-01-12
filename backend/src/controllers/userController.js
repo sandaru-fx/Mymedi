@@ -58,8 +58,10 @@ const toggleBan = async (req, res) => {
 
         if (!user) return res.status(404).json({ error: "User not found" });
 
+        const { logAction } = require('../utils/logger');
         user.isBanned = !user.isBanned;
         await user.save();
+        await logAction(user.isBanned ? 'BAN_USER' : 'UNBAN_USER', 'Admin', `${user.isBanned ? 'Banned' : 'Unbanned'} user: ${user.email}`, user._id);
 
         res.json({ message: `User ${user.isBanned ? 'banned' : 'unbanned'} successfully`, isBanned: user.isBanned });
     } catch (error) {

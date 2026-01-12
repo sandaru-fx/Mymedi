@@ -6,8 +6,12 @@ const {
     updateMedicine,
     deleteMedicine,
     bulkUploadMedicines,
-    getAIAnalytics
+    getAIAnalytics,
+    getAuditLogs,
+    getSystemHealth,
+    analyzeReportFraud
 } = require('../controllers/adminController');
+
 const { requireAdmin } = require('../middleware/authMiddleware');
 const multer = require('multer');
 const upload = multer();
@@ -18,6 +22,9 @@ router.use(requireAdmin);
 router.get('/all-medicines', getAllMedicines);
 router.post('/bulk-upload', upload.single('file'), bulkUploadMedicines);
 router.get('/ai-analytics', getAIAnalytics);
+router.get('/audit-logs', getAuditLogs);
+router.get('/health', getSystemHealth);
+router.post('/analyze-fraud', analyzeReportFraud);
 router.post('/add-medicine', addMedicine);
 router.put('/update-medicine/:id', updateMedicine);
 router.delete('/delete-medicine/:id', deleteMedicine);

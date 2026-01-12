@@ -62,6 +62,17 @@ const medicines = [
         foodInteractions: "No alcohol.",
         disclaimer: "Strictly prescription only."
     },
+    {
+        medicineName: "celecoxib",
+        displayName: "Celecoxib (Celebrex)",
+        description: "COX-2 inhibitor for pain.",
+        uses: "Arthritis, acute pain.",
+        howToUse: "Once or twice daily.",
+        priceRange: "Rs. 100 - 300 (card)",
+        sideEffects: ["Stomach pain", "Heart risks"],
+        foodInteractions: "With food.",
+        disclaimer: "Prescription only."
+    },
 
     // --- ANTIBIOTICS ---
     {
@@ -130,6 +141,28 @@ const medicines = [
         foodInteractions: "Take at start of meal.",
         disclaimer: "Prescription only."
     },
+    {
+        medicineName: "doxycycline",
+        displayName: "Doxycycline",
+        description: "Antibiotic for skin and chest.",
+        uses: "Acne, chest infections.",
+        howToUse: "Once or twice daily.",
+        priceRange: "Rs. 40 - 120 (card)",
+        sideEffects: ["Sun sensitivity"],
+        foodInteractions: "With water, upright.",
+        disclaimer: "Avoid sun."
+    },
+    {
+        medicineName: "clarithromycin",
+        displayName: "Clarithromycin",
+        description: "Macrolide antibiotic.",
+        uses: "H. pylori, chest infections.",
+        howToUse: "Twice daily.",
+        priceRange: "Rs. 200 - 600 (card)",
+        sideEffects: ["Bitter taste"],
+        foodInteractions: "With or without food.",
+        disclaimer: "Finish course."
+    },
 
     // --- GASTRITIS & STOMACH ---
     {
@@ -197,6 +230,17 @@ const medicines = [
         sideEffects: ["Stomach pain"],
         foodInteractions: "With fatty food helps.",
         disclaimer: "Repeat in 6 months."
+    },
+    {
+        medicineName: "famotidine",
+        displayName: "Famotidine",
+        description: "H2 blocker for acid.",
+        uses: "Heartburn, ulcers.",
+        howToUse: "Twice daily or at night.",
+        priceRange: "Rs. 30 - 80 (card)",
+        sideEffects: ["Headache"],
+        foodInteractions: "None.",
+        disclaimer: "Safe."
     },
 
     // --- ALLERGY & COUGH ---
@@ -277,8 +321,19 @@ const medicines = [
         foodInteractions: "None.",
         disclaimer: "Verify ingredients."
     },
+    {
+        medicineName: "theophylline",
+        displayName: "Theophylline",
+        description: "Asthma controller.",
+        uses: "Chronic asthma, COPD.",
+        howToUse: "As prescribed.",
+        priceRange: "Rs. 50 - 150 (card)",
+        sideEffects: ["Nausea"],
+        foodInteractions: "Limit caffeine.",
+        disclaimer: "Monitor levels."
+    },
 
-    // --- CHRONIC DISEASES (Diabetes, BP, Cholesterol) ---
+    // --- CHRONIC DISEASES (Diabetes, BP, Cholesterol, Heart) ---
     {
         medicineName: "metformin",
         displayName: "Metformin",
@@ -367,6 +422,50 @@ const medicines = [
         foodInteractions: "Wait 1hr before eating.",
         disclaimer: "Regular blood tests needed."
     },
+    {
+        medicineName: "clopidogrel",
+        displayName: "Clopidogrel (Clopilet)",
+        description: "Blood thinner.",
+        uses: "Prevents clots after heart attack.",
+        howToUse: "Once daily.",
+        priceRange: "Rs. 150 - 400 (card)",
+        sideEffects: ["Bruising"],
+        foodInteractions: "None.",
+        disclaimer: "Watch for bleeding."
+    },
+    {
+        medicineName: "sitagliptin",
+        displayName: "Sitagliptin",
+        description: "Diabetes medication.",
+        uses: "Type 2 diabetes sugar control.",
+        howToUse: "Once daily.",
+        priceRange: "Rs. 300 - 800 (card)",
+        sideEffects: ["Stomach upset"],
+        foodInteractions: "None.",
+        disclaimer: "Monitor sugar."
+    },
+    {
+        medicineName: "propranolol",
+        displayName: "Propranolol",
+        description: "Beta-blocker.",
+        uses: "Anxiety, migraine, heart rate.",
+        howToUse: "As prescribed.",
+        priceRange: "Rs. 30 - 80 (card)",
+        sideEffects: ["Fatigue"],
+        foodInteractions: "With food.",
+        disclaimer: "Don't stop suddenly."
+    },
+    {
+        medicineName: "pregabalin",
+        displayName: "Pregabalin",
+        description: "Nerve pain medication.",
+        uses: "Diabetes pain, nerve damage.",
+        howToUse: "Twice daily.",
+        priceRange: "Rs. 200 - 600 (card)",
+        sideEffects: ["Dizziness"],
+        foodInteractions: "None.",
+        disclaimer: "Sleepiness."
+    },
 
     // --- VITAMINS & SUPPLEMENTS ---
     {
@@ -446,6 +545,17 @@ const medicines = [
         foodInteractions: "With fatty meal.",
         disclaimer: "Check quality."
     },
+    {
+        medicineName: "vitamin d",
+        displayName: "Vitamin D3",
+        description: "Bone and immunity.",
+        uses: "Bone health, immunity.",
+        howToUse: "Daily or weekly dose.",
+        priceRange: "Rs. 300 - 1000",
+        sideEffects: ["None"],
+        foodInteractions: "With fatty meal.",
+        disclaimer: "Monitor levels."
+    },
 
     // --- TOPICAL & FIRST AID ---
     {
@@ -502,6 +612,17 @@ const medicines = [
         sideEffects: ["Irritation"],
         foodInteractions: "External only.",
         disclaimer: "Continue after healing."
+    },
+    {
+        medicineName: "silverex",
+        displayName: "Silverex (Silver Nitrate)",
+        description: "Burn cream.",
+        uses: "Burns, wounds.",
+        howToUse: "Apply on burns.",
+        priceRange: "Rs. 250 - 500",
+        sideEffects: ["Staining"],
+        foodInteractions: "External.",
+        disclaimer: "Keep sterile."
     }
 ];
 

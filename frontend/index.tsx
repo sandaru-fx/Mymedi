@@ -15,11 +15,16 @@ if (!rootElement) {
   throw new Error("Could not find root element to mount to");
 }
 
-const root = ReactDOM.createRoot(rootElement);
-root.render(
-  <React.StrictMode>
+import { clerkSinhala } from './src/localization/clerkSinhala';
+
+// Root component to manage Global Language State for Clerk
+const Root = () => {
+  const [lang, setLang] = React.useState(localStorage.getItem('mediguide_language') || 'sinhala');
+
+  return (
     <ClerkProvider
       publishableKey={PUBLISHABLE_KEY}
+      localization={lang === 'sinhala' ? clerkSinhala : undefined}
       appearance={{
         variables: {
           colorPrimary: '#14b8a6',
@@ -42,7 +47,14 @@ root.render(
         }
       }}
     >
-      <App />
+      <App onLanguageChange={setLang} />
     </ClerkProvider>
+  );
+};
+
+const root = ReactDOM.createRoot(rootElement);
+root.render(
+  <React.StrictMode>
+    <Root />
   </React.StrictMode>
 );

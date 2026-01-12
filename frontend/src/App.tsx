@@ -22,7 +22,11 @@ import AdminDashboard from './views/AdminDashboard';
 import ProfileView from './views/ProfileView';
 import FAQView from './views/FAQView';
 
-const App: React.FC = () => {
+interface AppProps {
+  onLanguageChange?: (lang: any) => void;
+}
+
+const App: React.FC<AppProps> = ({ onLanguageChange }) => {
   const controller = useAppController();
   const {
     view, setView, role, activeTab, setActiveTab,
@@ -34,6 +38,13 @@ const App: React.FC = () => {
     showWelcome, setShowWelcome, completeWelcome,
     showOnboarding, setShowOnboarding
   } = controller;
+
+  // Sync Language to Parent (for Clerk Localization)
+  React.useEffect(() => {
+    if (onLanguageChange) {
+      onLanguageChange(language);
+    }
+  }, [language, onLanguageChange]);
 
   // Sync User to Backend on Login
   React.useEffect(() => {
@@ -121,7 +132,7 @@ const App: React.FC = () => {
       />
 
       <main className="flex-grow flex flex-col items-center relative z-10 overflow-y-auto w-full">
-        {(view === 'landing' || view === 'app') && activeTab === 'home' && view === 'landing' && <LandingPage setView={setView} />}
+        {(view === 'landing' || view === 'app') && activeTab === 'home' && view === 'landing' && <LandingPage setView={setView} setLanguage={setLanguage} language={language} />}
 
         {view === 'login' && (
           <LoginPage

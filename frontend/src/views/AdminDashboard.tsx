@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import DashboardCharts from '../components/admin/DashboardCharts';
+import ActivityFeed from '../components/admin/ActivityFeed';
 import { API_BASE_URL } from '../config/apiConfig';
-import { MessageSquare, Send, CheckCircle, XCircle, Clock, Image as ImageIcon, Sun, Moon } from 'lucide-react';
+import { MessageSquare, Send, CheckCircle, XCircle, Clock, Image as ImageIcon, Sun, Moon, FileText } from 'lucide-react';
 
 interface Medicine {
     _id: string;
@@ -146,6 +148,32 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, isDarkMode, t
     const [users, setUsers] = useState<User[]>([]);
     const [aiInsight, setAiInsight] = useState('');
     const [loadingAI, setLoadingAI] = useState(false);
+
+    // Prepare Activity Feed Data
+    const activities = React.useMemo(() => {
+        const reportActs = reports.slice(0, 10).map(r => ({
+            id: r._id,
+            type: 'REPO' as const,
+            title: `Report: ${r.medicineName}`,
+            subtitle: `${r.pharmacyName} - ${r.status}`,
+            timestamp: r.date,
+            status: r.status
+        }));
+
+        const msgActs = messages.slice(0, 10).map(m => ({
+            id: m._id,
+            type: 'MSG' as const,
+            title: `Inquiry: ${m.subject}`,
+            subtitle: m.name,
+            timestamp: m.createdAt,
+            status: m.status
+        }));
+
+        // Merge and sort by newest
+        return [...reportActs, ...msgActs]
+            .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+            .slice(0, 15);
+    }, [reports, messages]);
 
     // Medicine Form State
     const [showAddModal, setShowAddModal] = useState(false);
@@ -478,18 +506,55 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, isDarkMode, t
 
                     {/* OVERVIEW */}
                     {activeSection === 'overview' && (
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div className="bg-white dark:bg-white/5 p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm dark:shadow-none">
-                                <h3 className="text-slate-500 dark:text-gray-400 font-bold">Total Medicines</h3>
-                                <p className="text-4xl font-black text-slate-900 dark:text-white">{medicines.length > 0 ? medicines.length : '50+'}</p>
+                        <div className="space-y-6">
+                            {/* Metrics Row */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div className="bg-white dark:bg-white/5 p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm transition-transform hover:scale-105">
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <p className="text-slate-500 dark:text-gray-400 font-bold text-sm uppercase">Total Medicines</p>
+                                            <p className="text-4xl font-black text-slate-900 dark:text-white mt-2">{medicines.length > 0 ? medicines.length : '50+'}</p>
+                                        </div>
+                                        <div className="p-3 bg-blue-500/10 rounded-full text-blue-500">
+                                            <ImageIcon className="w-6 h-6" />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="bg-white dark:bg-white/5 p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm transition-transform hover:scale-105">
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <p className="text-slate-500 dark:text-gray-400 font-bold text-sm uppercase">Pending Reports</p>
+                                            <p className="text-4xl font-black text-yellow-500 dark:text-yellow-400 mt-2">{reports.filter(r => r.status === 'Pending').length}</p>
+                                        </div>
+                                        <div className="p-3 bg-yellow-500/10 rounded-full text-yellow-500">
+                                            <FileText className="w-6 h-6" />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="bg-white dark:bg-white/5 p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm transition-transform hover:scale-105">
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <p className="text-slate-500 dark:text-gray-400 font-bold text-sm uppercase">Unread Inquiries</p>
+                                            <p className="text-4xl font-black text-teal-600 dark:text-teal-400 mt-2">{Array.isArray(messages) ? messages.filter(m => m.status === 'Unread').length : 0}</p>
+                                        </div>
+                                        <div className="p-3 bg-teal-500/10 rounded-full text-teal-500">
+                                            <MessageSquare className="w-6 h-6" />
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div className="bg-white dark:bg-white/5 p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm dark:shadow-none">
-                                <h3 className="text-slate-500 dark:text-gray-400 font-bold">Pending Reports</h3>
-                                <p className="text-4xl font-black text-yellow-500 dark:text-yellow-400">{reports.filter(r => r.status === 'Pending').length}</p>
-                            </div>
-                            <div className="bg-white dark:bg-white/5 p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm dark:shadow-none">
-                                <h3 className="text-slate-500 dark:text-gray-400 font-bold">Unread Messages</h3>
-                                <p className="text-4xl font-black text-teal-600 dark:text-teal-400">{Array.isArray(messages) ? messages.filter(m => m.status === 'Unread').length : 0}</p>
+
+                            {/* Main Analysis Section */}
+                            <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+                                {/* Charts Column */}
+                                <div className="xl:col-span-3">
+                                    <DashboardCharts reports={reports} />
+                                </div>
+
+                                {/* Activity Feed Column */}
+                                <div className="xl:col-span-1">
+                                    <ActivityFeed activities={activities} />
+                                </div>
                             </div>
                         </div>
                     )}

@@ -103,9 +103,39 @@ const ReportsView: React.FC = () => {
 
     const [showSuccess, setShowSuccess] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
+    const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
+
+    const validateForm = () => {
+        const errors: { [key: string]: string } = {};
+
+        // NIC Validation (Old: 9 digits + V/X, New: 12 digits)
+        const nicRegex = /^([0-9]{9}[vVxX]|[0-9]{12})$/;
+        if (!nicRegex.test(formData.nic)) {
+            errors.nic = "Invalid NIC format (e.g., 123456789V or 199012345678)";
+        }
+
+        // Price Validation
+        if (parseFloat(formData.pricePaid) <= 0) {
+            errors.pricePaid = "Price must be greater than 0";
+        }
+
+        // Receipt Validation
+        if (!formData.receiptImage) {
+            errors.receipt = "Please upload a photo of the receipt/bill";
+        }
+
+        setFieldErrors(errors);
+        return Object.keys(errors).length === 0;
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (!validateForm()) {
+            setSubmitError("Please fix the highlighted errors.");
+            return;
+        }
+
         setIsLoading(true);
         setSubmitError(null);
         try {
@@ -214,6 +244,7 @@ const ReportsView: React.FC = () => {
                                                     className="w-full pl-12 pr-4 py-4 rounded-xl bg-slate-50 dark:bg-black/20 font-bold text-black dark:text-white outline-none focus:ring-2 focus:ring-teal-500 transition-all border-none" placeholder="981234567V" />
                                                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"><FileText size={20} /></div>
                                             </div>
+                                            {fieldErrors.nic && <p className="text-red-500 text-xs font-bold mt-1 ml-2">{fieldErrors.nic}</p>}
                                         </div>
                                         <div className="flex flex-col gap-2">
                                             <label className="text-xs font-black text-black dark:text-slate-400 uppercase tracking-widest ml-1">Pharmacy Name</label>
@@ -245,6 +276,7 @@ const ReportsView: React.FC = () => {
                                             </>
                                         )}
                                     </div>
+                                    {fieldErrors.receipt && <p className="text-red-500 text-xs font-bold mt-1 text-center">{fieldErrors.receipt}</p>}
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">

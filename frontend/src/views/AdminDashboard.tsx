@@ -307,6 +307,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, isDarkMode, t
 
     const handleAddMedicine = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // Validation
+        const priceRegex = /^(\d+(\.\d{1,2})?|\d+(\.\d{1,2})?\s*-\s*\d+(\.\d{1,2})?)$/;
+        if (!priceRegex.test(formData.priceRange)) {
+            alert("Invalid Price Format! Use '100' or '100 - 200'");
+            return;
+        }
+
         try {
             const url = editingMedicineId
                 ? `${API_BASE_URL}/admin/update-medicine/${editingMedicineId}`
@@ -325,6 +333,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, isDarkMode, t
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
+
+            const data = await res.json();
+
             if (res.ok) {
                 setShowAddModal(false);
                 setEditingMedicineId(null);
@@ -334,9 +345,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, isDarkMode, t
                     foodInteractions: '', disclaimer: '', image: ''
                 });
                 fetchMedicines();
-                alert(editingMedicineId ? "Medicine Updated!" : "Medicine Added!");
+                alert(editingMedicineId ? "Medicine Updated Successfully!" : "New Medicine Added to Database!");
+            } else {
+                throw new Error(data.error || "Operation failed");
             }
-        } catch (error) { alert("Failed"); }
+        } catch (error: any) {
+            console.error(error);
+            alert(error.message || "Failed to save medicine. Check network connection.");
+        }
     };
 
     const handleEditClick = (med: Medicine) => {
